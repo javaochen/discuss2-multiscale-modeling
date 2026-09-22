@@ -1,0 +1,413 @@
+\section{Q3：潮流与 RMS 如何连接——多尺度建模（重点）}
+\label{sec:q3}
+
+\noindent\textbf{本章回答}：潮流与 RMS 之间怎么连接、传什么变量。
+本报告把“连接”区分为四种含义：
+(a) \textbf{降阶关系}——数学上谁是谁的特例（\S\ref{sec:singular}）；
+(b) \textbf{初始化与交替}——时间上串接，例如先算潮流再启动 RMS（\S\ref{sec:workpoint}）；
+(c) \textbf{接口}——空间上分块、在边界交换变量，例如 EMT$|$RMS 混合仿真（\S\ref{sec:phasor-link}、\S\ref{sec:hybrid}）；
+(d) \textbf{统一/协同求解}——把两者的方程联立或迭代求解。
+本章给出 (a)(b)(c)，(d) 属于下一步“统一建模”的调研内容，本章不展开。
+
+讨论中的原话是“调研潮流和 RMS 模型之间怎么连接、之间传什么变量”。
+本节给出三层答案：
+（i）\S\ref{sec:workpoint} \textbf{工作点层}：潮流是 RMS 的平衡态，传 $V\angle\theta$ 与 $P,Q$；
+（ii）\S\ref{sec:phasor-link} \textbf{瞬时--相量层}：EMT 与 RMS 之间的接口变量是
+“三相瞬时值 $\leftrightarrow$ 基频正序相量”，并给出降阶误差判据；
+（iii）\S\ref{sec:singular} \textbf{数学本质层}：用奇异摄动说明前两层其实是同一件事——
+时间尺度分离下的慢流形投影。最后 \S\ref{sec:hybrid} 讨论混合仿真的接口与代价。
+
+\subsection{第一层：潮流与 RMS 的连接（传 $V\angle\theta$ 与 $P,Q$）}
+\label{sec:workpoint}
+
+令 RMS 的微分--代数方程~\eqref{eq:rms-dae} 的所有时间导数为零：
+\begin{equation}
+\bzero=\bm{f}(\bx,\bm{y},\bu),\qquad \bzero=\bm{g}(\bx,\bm{y},\bu),
+\label{eq:rms-equilibrium}
+\end{equation}
+其解 $(\bx_0,\bm{y}_0)$ 就是\textbf{平衡点}。
+\textbf{读法}：这就是“平衡点”的数学定义——所有时间导数同时为零；
+它把动态问题退化成代数问题，是潮流与 RMS 之间的第一个接口。其中代数方程 $\bm{g}=\bzero$ 正是
+式~\eqref{eq:power-flow}，而 $\bm{f}=\bzero$ 给出机组/变流器的稳态出力。
+因此：
+
+\begin{quote}
+\textbf{RMS 用潮流的解作为仿真初值}：动态仿真必须从某个稳态出发，这个稳态由潮流给出——
+母线电压 $V_i\angle\theta_i$、各机组出力、变流器工作点，即行业中所说的“潮流初始化”；\\
+\textbf{潮流用 RMS 的结果作为热启动}：RMS 时段仿真结束后，新的 $(\bx,\bm{y})$
+成为下一时段潮流的初值。QSTS 与 RMS 交替使用，就是“准稳态$+$动态”的分段拼接。
+\end{quote}
+
+接口实际传递的量只有\textbf{母线电压相量 $V_i\angle\theta_i$ 与节点注入 $P_i,Q_i$}；
+机组/储能的有功无功设定属于\textbf{控制输入}，变压器分接头与负荷 ZIP 系数属于\textbf{模型参数}——
+它们会影响潮流解，但本身不作为接口变量交换（对接项目“主配微协同”\cite{ndrc2024}）。
+
+\paragraph{小问题：用潮流的解初始化 RMS，为什么可行？}
+潮流的解给出的是\textbf{稳态运行点}（母线电压 $V_i\angle\theta_i$ 与注入 $P_i,Q_i$）。
+而 RMS 需要的\textbf{更多}：除运行点外，还需要状态初值（$\delta_0,\omega_0,E_0'$）、
+控制器初值，以及模型参数（$M,D$、励磁与调速器参数）。
+因此“初始化”的确切含义是：\textbf{以潮流的稳态点为基准，按各元件的稳态关系反算状态初值，
+并设定控制器初值}（行业中称“潮流初始化”）。
+换句话说，潮流只提供起点所需的一部分，其余必须由模型参数与稳态关系补足。
+
+\subsection{第二层：EMT 与 RMS 的接口变量（瞬时 $\leftrightarrow$ 基频相量）}
+\label{sec:phasor-link}
+
+\subsubsection{Park 变换：为什么它能“消掉”载波}
+\begin{derivblock}{推导块 1：Park 变换——载波变直流}
+\textbf{起点}：三相正序 $+$ 变换矩阵；\textbf{目标}：证明 $v_d=V,\,v_q=0$（2 步）；\textbf{结论}：载波在 $dq$ 中变直流；\textbf{支撑}：准稳态判据。
+
+
+
+定义 $abc\to dq0$ 的幅值不变变换（$\theta=\omega_s t+\theta_0$ 为同步旋转角）：
+\begin{equation}
+\begin{bmatrix}v_d\\v_q\\v_0\end{bmatrix}
+=\frac{2}{3}
+\begin{bmatrix}
+\cos\theta & \cos(\theta-\tfrac{2\pi}{3}) & \cos(\theta+\tfrac{2\pi}{3})\\[2pt]
+-\sin\theta & -\sin(\theta-\tfrac{2\pi}{3}) & -\sin(\theta+\tfrac{2\pi}{3})\\[2pt]
+\tfrac12 & \tfrac12 & \tfrac12
+\end{bmatrix}
+\begin{bmatrix}v_a\\v_b\\v_c\end{bmatrix}
+=:\bT(\theta)\,\bm{v}_{abc}.
+\label{eq:park}
+\end{equation}
+\textbf{读法}：$\bT(\theta)$ 把三相瞬时量投影到一个\textbf{随电网同步旋转}的坐标系上
+（$\theta$ 为旋转角，系数 $2/3$ 保证幅值不变）。
+把对称正序信号 $v_a=V\cos\omega_s t$，$v_b=V\cos(\omega_s t-\tfrac{2\pi}{3})$，
+$v_c=V\cos(\omega_s t+\tfrac{2\pi}{3})$ 代入式~\eqref{eq:park}（取 $\theta=\omega_s t$）：
+\begin{equation}
+v_d=\frac{2}{3}\cdot\frac{3}{2}V=V,\qquad v_q=0,\qquad v_0=0 .
+\label{eq:park-dc}
+\end{equation}
+其中用到恒等式 $\sum_{k=0}^{2}\cos^2(\theta-\tfrac{2k\pi}{3})=\tfrac32$。
+\textbf{读法}：对称正序电压在 $dq$ 中只剩一个常数 $V$——载波被“转掉”了，
+只剩幅值（和相位）这类慢变量。
+\textbf{50 Hz 的旋转矢量在同步旋转坐标系中变成了直流}，这正是相量模型能“丢掉载波”的原因。
+
+\end{derivblock}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{fig03_park_transform.pdf}
+\caption{\textbf{这张图说明}：为什么可以只盯住缓慢变化的幅值与相位，而把 50 Hz 的摆动“转掉”。
+\textbf{画的是什么}：(a) 三相瞬时电压 $v_a,v_b,v_c$（三条正弦，横轴为时间 ms）；
+(b) $dq$ 分量，实线为平衡正序、虚线为含负序的不平衡情形；
+(c) $\alpha\beta$ 平面上的矢量轨迹（实线为圆、虚线为椭圆）；
+(d) 幅值受 5 Hz 调制时的 $v_a$（细线）、其 $d$ 分量 $v_d$（粗线）与调制函数 $A(t)$（点线）。
+\textbf{怎么读}：平衡正序时 $v_d$ 为水平直线、$v_q=0$（载波被“转掉”）；
+含负序时 $dq$ 出现 $2\omega_s$ 纹波；幅值慢变时 $dq$ 变为慢变量。
+\textbf{结论}：纹波说明三相不平衡时相量法失效；慢变说明准稳态/QSTS 的适用区。}
+\label{fig:park}
+\end{figure}
+
+
+\subsubsection{RL 支路的 $dq$ 方程：交叉耦合项从哪来}
+\begin{derivblock}{推导块 2：RL 支路的 dq 方程}
+\textbf{起点}：$abc$ 域 $RL$ 方程；\textbf{目标}：$dq$ 形式与交叉项来源（2 步）；\textbf{结论}：$\omega L$ 来自坐标旋转、非电磁暂态；\textbf{支撑}：EMT/RMS 的分界。
+
+
+
+由 $v_{abc}=Ri_{abc}+L\,\dd i_{abc}/\dd t$ 与 $\bm i_{abc}=\bT^{-1}\bm i_{dq0}$ 可得（完整推导见附录~\ref{app:rldq}）
+\begin{equation}
+\boxed{\;
+v_d=R\,i_d+L\,\dif{i_d}{t}-\omega L\,i_q,\qquad
+v_q=R\,i_q+L\,\dif{i_q}{t}+\omega L\,i_d .\;}
+\label{eq:rl-dq}
+\end{equation}
+式~\eqref{eq:rl-dq} 是理解“EMT 与 RMS 差在哪”的钥匙：\\
+RMS 保留 $\omega L$ 交叉项（它来自坐标旋转，不是电磁暂态），
+但忽略 $L\,\dd i_d/\dd t$（它才是电磁暂态）；
+EMT 两项都保留。若忽略哪一项，必须用 \S\ref{sec:quasi} 的判据量化。
+
+
+\end{derivblock}
+
+\subsubsection{准稳态（相量）近似与误差判据}
+\begin{derivblock}{推导块 3：准稳态误差判据}
+\textbf{起点}：复包络；\textbf{目标}：误差公式（3 步）；\textbf{结论}：$\varepsilon=m(\Omega/\omega_s)\sin\phi_z$；\textbf{支撑}：QSTS 是否可用的判据。
+
+\textbf{与块 1 的衔接}：块 1（Park）说明了载波为什么可以“丢掉”；本块回答接下来的问题——
+忽略包络的导数 $\dot I$ 会带来多大误差。其零阶结果就是工程上的相量法（动态相量法的零阶近似\cite{chen2023}）。
+
+
+\label{sec:quasi}
+
+设电源含慢变包络，$v(t)=\Real\{V(t)e^{\jj\omega_s t}\}$，把 $i(t)=\Real\{I(t)e^{\jj\omega_s t}\}$
+代入 $v=Ri+L\,\dd i/\dd t$。由于 $\dd i/\dd t=\Real\{(\dot I+\jj\omega_s I)e^{\jj\omega_s t}\}$，
+在基频分量上取等（即忽略 $I(t)$ 产生的 $2\omega_s$ 谐波）：
+\begin{equation}
+\underbrace{(R+\jj\omega_s L)}_{Z(\jj\omega_s)}I(t)\;+\;L\,\dot I(t)=V(t).
+\label{eq:envelope-ode}
+\end{equation}
+\textbf{读法}：这是 $RL$ 支路在复包络下的\textbf{精确}方程；
+与相量形式的差别只在多出的 $L\dot I$ 项——它正是相量法丢掉的那部分。
+\textbf{相量法/准稳态法}就是令 $\dot I=0$：
+\begin{equation}
+I_0(t)=\frac{V(t)}{Z(\jj\omega_s)},\qquad
+Z(\jj\omega_s)=R+\jj\omega_s L,\quad |Z|=\sqrt{R^2+(\omega_s L)^2}.
+\label{eq:quasi-static}
+\end{equation}
+\textbf{读法}：令 $\dot I=0$ 得到熟悉的“复数欧姆定律”——这就是工程上的相量法；
+$Z(\jmath\omega_s)$ 把电阻与电抗合并成一个复数。
+对式~\eqref{eq:envelope-ode} 做一次收缩迭代：记 $I=I_0+\delta I$，零阶解为
+式~\eqref{eq:quasi-static} 的 $I_0=V/Z$；代回并保留到一阶得 $Z\,\delta I\approx-L\dot I_0$，
+即 $\delta I=-L\dot I_0/Z$。设 $V(t)=V_0(1+m\sin\Omega t)$，
+则 $\dot I_0=m\Omega V_0\cos(\Omega t)/Z$，$|\dot I_0|_{\max}=m\Omega|I_0|$，于是相对误差
+\begin{equation}
+\boxed{\;
+\varepsilon_{\text{qs}}
+=\frac{|\delta I|_{\max}}{|I_0|}
+=m\,\frac{\Omega}{\omega_s}\,\frac{\omega_s L}{|Z|}
+=m\,\frac{\Omega}{\omega_s}\,\sin\phi_z ,
+\qquad \phi_z=\arctan\frac{\omega_s L}{R} .\;}
+\label{eq:qs-error}
+\end{equation}
+式~\eqref{eq:qs-error} 是本报告最重要的判据之一（同类误差机理在动态相量--电磁暂态混合仿真中的系统分析见文献\cite{chen2023}）：\textbf{准稳态误差正比于
+“包络带宽 / 载波频率”，比例系数为 $\sin\phi_z\le1$}。
+它同时解释了为什么
+(i) 开关频率越高（$f_{\max}$ 越大）越不能用相量；
+(ii) 当 $R\gg\omega_s L$（阻性主导）时 $\sin\phi_z\to0$，即便慢变也很准；
+(iii) 当 $\omega_s L\gg R$（感性主导）时 $\sin\phi_z\to1$，误差最大，需 $\Omega/\omega_s\lesssim\varepsilon$。
+
+\end{derivblock}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{fig04_phasor_vs_waveform.pdf}
+\caption{\textbf{这张图说明}：相量法在最坏情况下会漏掉多大的量。
+\textbf{画的是什么}：(a) 横轴为时间（ms），纵轴为归一化电流 $i|Z|/V_m$，
+其中 $|Z|=\sqrt{R^2+(\omega_sL)^2}$ 为阻抗模、$V_m$ 为电压峰值；
+灰细线为电源电压、红线为 EMT 精确解（含暂态）、蓝虚线为相量稳态解。
+(b) 纵轴为两解之差（对数），三条曲线对应不同合闸相角 $\phi$（电压初相），黑点线为理论衰减 $e^{-t/\tau}$。
+参数：$\omega_s=2\pi\times50$ rad/s，$R=1\,\Omega$，$L=0.02$ H，故 $\tau=L/R=20$ ms、$\omega_sL/R\approx6.3$。
+\textbf{怎么读}：(a) 两解在稳态段重合、在起始段分离，分离量就是被丢掉的直流暂态；(b) 差值按 $e^{-t/\tau}$ 衰减。
+\textbf{结论}：最坏合闸角（$\phi=\phi_z$，$\phi_z=\arctan(\omega_sL/R)$）下，丢掉的暂态与稳态分量同量级。}
+\label{fig:phasor}
+\end{figure}
+
+解析地，$L\,\dd i/\dd t+R i=V_m\cos(\omega_s t+\phi)$、$i(0)=0$ 的解为
+\begin{equation}
+i_{\text{EMT}}(t)=\frac{V_m}{|Z|}\Bigl[\cos(\omega_s t+\phi-\phi_z)
+-\cos(\phi-\phi_z)e^{-t/\tau}\Bigr],\quad \tau=\frac{L}{R},
+\label{eq:phasor-exact}
+\end{equation}
+\textbf{读法}：方括号内第一项是稳态（相量）解，第二项是合闸产生的直流暂态，
+按 $e^{-t/\tau}$ 衰减；相量法只保留了第一项。
+而相量解是其中的稳态项。两者之差为
+$\frac{V_m}{|Z|}\cos(\phi-\phi_z)e^{-t/\tau}$，
+在 $\phi=\phi_z$（最坏合闸角）时幅值等于稳态幅值——这就是图~\ref{fig:phasor}(a) 的现象。
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.99\textwidth]{fig05_quasistatic_error.pdf}
+\caption{\textbf{这张图说明}：什么时候可以放心用相量法（潮流/QSTS），什么时候不行。
+\textbf{画的是什么}：横轴为带宽比 $\Omega/\omega_s$（对数；$\Omega$ 为电压包络的变化角频率，$\omega_s=2\pi\times50$ rad/s）；
+纵轴为最大相对误差 $\max|i_{\text{精确}}-i_{\text{相量}}|/|I_0|$（对数）。
+三组曲线对应不同的 $\omega_sL/R$（感抗与电阻之比，取 $0.2,\,1,\,5$）；
+每组中带点线为数值结果、细虚线为解析式 $\varepsilon=m(\Omega/\omega_s)\sin\phi_z$
+（$m=0.3$ 为包络调制深度，$\phi_z=\arctan(\omega_sL/R)$）；水平点线为 $1\%$ 误差容限。
+\textbf{怎么读}：三组曲线斜率均为 1，说明误差与带宽比成正比；数值与理论重合即验证了公式。
+\textbf{结论}：准稳态误差判据式~\eqref{eq:qs-error} 成立，可由它与误差容限反推允许的带宽比。}
+\label{fig:quasistatic}
+\end{figure}
+
+\paragraph{小问题：准稳态误差式~\eqref{eq:qs-error} 是怎么来的、量级多大？}
+它来自“复包络 $+$ 一次收缩迭代”：把 $v=\Real\{Ve^{\jmath\omega_s t}\}$、
+$i=\Real\{Ie^{\jmath\omega_s t}\}$ 代入 $v=Ri+L\dot i$，
+先算忽略 $\dot I$ 的零阶解 $I_0=V/Z$，再把 $I_0$ 代回右端得到一阶修正
+$\delta I=-L\dot I_0/Z$，于是相对误差为
+$|\delta I|/|I_0|=m(\Omega/\omega_s)\cdot(\omega_sL/|Z|)$。
+量级上，$m\sim0.3$、$\Omega/\omega_s\sim0.1$ 时误差约 $3\%$，
+与图~\ref{fig:quasistatic} 的数值一致；
+要让误差低于 $1\%$，需 $\Omega/\omega_s<0.01/(m\sin\phi_z)$。
+
+
+\subsection{第三层：为什么可以这样连接（奇异摄动与慢流形）}
+\begin{derivblock}{推导块 4：奇异摄动与慢流形}
+\textbf{起点}：$\varepsilon\dot{\bm z}=\bm g(\bm x,\bm z)$；\textbf{目标}：慢流形与降阶（3 步）；\textbf{结论}：RMS $=$ EMT 在 $\varepsilon\to0$ 的降阶；\textbf{支撑}：前两层连接的合法性。
+
+\textbf{与块 2、块 3 的关系}：块 2、块 3 处理的是“某一条支路”上的快慢分离；
+本块把它推广到一般系统，因此\textbf{块 3 的准稳态近似就是本框架的零阶结果}——
+两者是同一件事的“具体实例”与“统一表述”，不是两套独立结论。
+
+
+\label{sec:singular}
+
+把完整系统按时间尺度分成慢变量 $\bx$（机电，秒级）与快变量 $\bz$（电磁，$\mu$s--ms 级），
+写成标准奇异摄动形式
+\begin{equation}
+\dot\bx=\bm{f}(\bx,\bz),\qquad
+\varepsilon\,\dot\bz=\bm{g}(\bx,\bz),\qquad
+0<\varepsilon\ll1 .
+\label{eq:singular}
+\end{equation}
+\textbf{读法}：$\varepsilon$ 是快慢时间常数之比；第二式左端被 $\varepsilon$ 压小，
+意味着 $\bz$ 相对 $\bx$ 几乎是“瞬间”跟随。
+令 $\varepsilon\to0$ 得\textbf{代数约束} $\bm{g}(\bx,\bz)=\bzero$；
+若 $\partial\bm{g}/\partial\bz$ 可逆（等价于快子系统稳定），由隐函数定理得\textbf{慢流形}
+\begin{equation}
+\bz=\bm{h}(\bx),\qquad
+\dot\bx=\bm{f}\bigl(\bx,\bm{h}(\bx)\bigr)=:\bm{f}_r(\bx).
+\label{eq:slow-manifold}
+\end{equation}
+\textbf{读法}：快变量不再独立演化，而是被慢变量\textbf{完全决定}——
+这就是“降阶”：去掉了快变量对应的微分方程，换成代数约束。
+式~\eqref{eq:slow-manifold} 就是\textbf{降阶模型}。Tikhonov 定理给出误差界：
+若快子系统在流形邻域内一致渐近稳定，则原解在 $O(\varepsilon)$ 时间（边界层）内经
+$\|\bz(t)-\bm{h}(\bx(t))\|\le C e^{-t/\varepsilon}$ 收敛到降阶解，之后误差为 $O(\varepsilon)$。
+
+\end{derivblock}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.99\textwidth]{fig06_singular_perturbation.pdf}
+\caption{\textbf{这张图说明}：为什么可以把“变化太快”的东西忽略掉而不出错。
+\textbf{画的是什么}：(a) 相平面 $(x,z)$，$x$ 为慢变量、$z$ 为快变量；黑虚线为慢流形 $z=\tanh x$，
+三条彩色曲线为 $\varepsilon=0.5,\,0.1,\,0.01$ 的轨迹（圆点为起点、方点为终点）。
+(b) 一条轨迹（$\varepsilon=0.05$）的 $x(t)$、$z(t)$ 与代数约束 $\tanh x$，阴影为边界层。
+(c) 边界层时间 $t_b$（$z$ 进入慢流形邻域所需时间）与 $\varepsilon$ 的双对数关系及斜率 1 参考线。
+所演示的系统为 $\dot x=-x+z$、$\varepsilon\dot z=\tanh x-z$。
+\textbf{怎么读}：$\varepsilon$ 越小，轨迹越快贴到慢流形（先竖直、再沿流形）；$t_b$ 与 $\varepsilon$ 成正比。
+\textbf{直观理解}：把快变量 $z$ 想成一个很灵敏的温度计、慢变量 $x$ 是室温，$\varepsilon$ 相当于温度计的响应时间。
+$\varepsilon$ 很小 → 温度计几乎瞬间读数（轨迹立刻贴到慢流形、边界层很薄）；
+$\varepsilon$ 变大 → 温度计要过一会儿才追上（轨迹变成斜线）。
+所以 $\varepsilon$ 决定“快动态能被忽略到什么程度”。
+\textbf{结论}：$\varepsilon\to0$ 时快动态被代数约束替代——这是 RMS 由 EMT 降阶的数学结构。}
+\label{fig:singular}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{fig07_eigen_spectrum.pdf}
+\caption{\textbf{这张图说明}：为什么 EMT 这么慢、这么贵。
+\textbf{画的是什么}：(a) 特征值 $\lambda$ 的分布，横轴为 $-\mathrm{Re}\,\lambda$、纵轴为 $|\mathrm{Im}\,\lambda|$（均为对数轴）；
+红叉为电磁模式（$|\lambda|\sim10^4$ rad/s）、蓝圈为机电模式（$|\lambda|\sim10^0$ rad/s）。
+(b) 按 $|\lambda|$ 降序排列的特征值（纵轴对数），红带为电磁区间、蓝带为机电区间。
+算例为 $10$ 阶 $dq$ 模型：无穷大母线 $+$ 两段 RL 线路 $+$ 节点电容 $+$ 一台同步机（参数见脚本）。
+\textbf{怎么读}：特征值分成两团、相隔 4--5 个数量级；两团之比即刚度比 $\kappa=\max|\lambda|/\min|\lambda|\approx5\times10^4$。
+\textbf{直观理解}：最快的模态决定“步长至少要多小”，最慢的模态决定“总共要算多长”；
+两者之比就是需要的步数——刚度比越大，步数越多、代价越高。
+\textbf{结论}：刚度比决定全阶 EMT 必须同时用微秒级步长与秒级仿真窗口，计算量比 RMS 高 $10^{3}$--$10^{6}$ 倍。}
+\label{fig:spectrum}
+\end{figure}
+
+\label{sec:eigen}
+图~\ref{fig:spectrum} 的算例把 $\varepsilon$ 具体化为刚度比
+\begin{equation}
+\varepsilon_{\text{grid}}\;\sim\;\frac{\tau_{\text{em}}}{\tau_{\text{mech}}}
+=\frac{L/R}{M/D}\;\sim\;10^{-4}\text{--}10^{-6},
+\label{eq:eps-grid}
+\end{equation}
+\textbf{读法}：电网的 $\varepsilon$ 就是“电磁时间常数 $\div$ 机电时间常数”，量级 $10^{-4}$--$10^{-6}$；
+$\varepsilon$ 越小，降阶越安全，但 EMT 要付出的计算代价越大。
+
+（与 \S\ref{sec:q1} 中“EMT 计算量高 $10^{3}$--$10^{6}$ 倍”的估计一致。）
+
+\paragraph{小问题：刚度比 $5\times10^4$ 是怎么算出来的？真实电网是多少？}
+它不是估的，是对一个 $10$ 阶 $dq$ 模型（无穷大母线 $+$ 两段 RL 线路 $+$ 节点电容
+$+$ 一台同步机）先数值求平衡点、再数值求 Jacobian 特征值得到的，
+脚本为 \texttt{fig07\_spectrum.py}，全部参数写在文件中。
+真实系统若含变流器开关级模式，快速模式可达 $10^6$ rad/s 以上，
+因此报告统一写“$10^4$--$10^6$”。这个区间正是“EMT 计算量高
+$10^3$--$10^6$ 倍”的来源。
+
+
+\subsection{工程推广：混合仿真的接口与代价}
+\label{sec:hybrid}
+
+当需要一个区域用 EMT、其余用 RMS 时，就出现\textbf{接口}问题
+（相关实现与研究见文献\cite{huang2017,liu2024}）。
+图~\ref{fig:hybrid} 给出结构与时步关系。接口交换的变量是明确的：
+\begin{equation}
+\underbrace{\bigl\{v_{abc}(t),\,i_{abc}(t)\bigr\}}_{\text{EMT 侧瞬时量}}
+\;\xrightarrow[\text{滑动 DFT}]{\ \ \text{基频提取}\ \ }\;
+\underbrace{\bigl\{V\angle\theta,\ I\angle\theta\bigr\}}_{\text{RMS 侧相量}}
+\;\xrightarrow[\text{相量合成}]{\ \ \text{受控源}\ \ }\;
+\underbrace{\bigl\{v_{abc}(t)\bigr\}}_{\text{EMT 侧瞬时量}} .
+\label{eq:interface-vars}
+\end{equation}
+\textbf{读法}：接口两边交换的量是明确的——EMT 侧给出瞬时波形、接收相量；
+RMS 侧给出相量、接收瞬时波形；中间的滑动 DFT 与相量合成就是双向翻译器。
+接口处的功率必须守恒：三相瞬时功率在一个周期上的平均应等于相量功率
+\begin{equation}
+P=\frac{1}{T}\int_{t-T}^{t}\sum_{\varphi\in\{a,b,c\}}\!\!v_\varphi(\tau)i_\varphi(\tau)\,\dd\tau
+\;\overset{\text{平衡正序}}{=}\;\frac{3}{2}\bigl(v_d i_d+v_q i_q\bigr)
+\;\overset{\text{相量}}{=}\;\Real\{V I^{*}\}\times3 .
+\label{eq:power-consistency}
+\end{equation}
+\textbf{读法}：三种写法必须相等——第一个等号是“一个周期的瞬时平均”，
+第二个等号用幅值不变的 $dq$ 变换（$v_d,i_d$ 为峰值），第三个等号假定 $V,I$ 为\textbf{有效值相量}。
+它是接口“不产生虚假功率”的校验式，实现后应逐时步检查。
+接口等值电路通常取\textbf{诺顿/戴维南等值}：EMT 侧把 RMS 区域看作
+“电流源 $I_n$ 并联导纳 $Y_n$”，RMS 侧把 EMT 区域看作“电压源 $E_{th}$ 串联阻抗 $Z_{th}$”。
+这两组等值参数不是任意的，它们决定了接口的数值稳定性（本质是阻抗匹配问题）。
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{fig08_hybrid_interface.pdf}
+\caption{\textbf{这张图说明}：EMT 和 RMS 拼在一起时，两边到底交换什么、代价是什么。
+\textbf{看图}：红区为 EMT 侧、蓝区为 RMS 侧，中间灰带为接口母线；
+红箭头是 EMT$\to$RMS（滑动 DFT 提取相量），蓝箭头是 RMS$\to$EMT（相量合成受控源）；
+下图为双时间轴，一个 RMS 大步含 $N$ 个 EMT 小步，紫色箭头标出接口延迟 $\tau_d\sim\Delta t_r/2$。
+\textbf{直观理解}：RMS 侧在一个大步内把接口值“记住不动”，而 EMT 侧一直在变；
+直到下一个交换时刻才更新，等效于平均慢半个大步——这就是延迟的来源。
+\textbf{结论}：接口交换的量就是图上标注的 $v_{abc},i_{abc}$ 与 $V\angle\theta,I\angle\theta$；
+代价是延迟与插值误差。}
+\label{fig:hybrid}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{fig09_interface_error.pdf}
+\caption{\textbf{这张图说明}：拼接口时，哪些坑会让结果不可信。
+\textbf{画的是什么}：(a) 横轴为 RMS 侧采样步长 $\Delta t_r$（对数，ms），
+纵轴为基波相量提取误差 $|\hat V-V|$（对数）；红点线为数值结果，
+紫色竖线为 Nyquist 临界 $\Delta t_r=1/(2f_h)=0.4$ ms（$f_h$ 为 EMT 侧最高关心谐波，这里取 $1250$ Hz），阴影为混叠区。
+(b) 横轴为接口延迟 $\tau$（对数，ms），纵轴为功率相对误差 $|\Delta P|/P$（对数）；
+三条实线为不同相角差 $\theta$ 下的精确值（功率 $P=(V_1V_2/X)\sin\theta$），
+细点线为近似式 $\omega_s\tau\cot\theta$，竖线标注 $\tau=5$ ms，水平点线为 $5\%$ 误差。
+\textbf{怎么读}：(a) 临界步长之下误差为数值零，超过后跳升；(b) 小延迟时精确值与近似式重合，
+$\theta$ 越小（轻载）误差越大。
+\textbf{直观理解}：(a) 采样太慢就像“看漏”了快速抖动，抖动会伪装成慢变化（混叠）；
+(b) 延迟让相角“看晚了一步”，而功率对相角很敏感——所以延迟会造成明显功率误差，轻载时更明显。
+\textbf{结论}：接口的两条硬约束——采样定理与延迟误差——决定混合仿真能否使用。}
+\label{fig:interface}
+\end{figure}
+
+\paragraph{延迟误差的推导。} 若 RMS 侧输出给 EMT 的电压相量比真实值滞后时间 $\tau$，
+则其相角估计滞后 $\Delta\theta=\omega_s\tau$。对两母线间功率
+$P=(V_1V_2/X)\sin\theta$ 做一阶展开：
+\begin{equation}
+\frac{\Delta P}{P}
+=\frac{\sin(\theta-\omega_s\tau)-\sin\theta}{\sin\theta}
+\approx-\frac{\omega_s\tau\cos\theta}{\sin\theta}
+=-\omega_s\tau\cot\theta ,
+\label{eq:delay-error}
+\end{equation}
+其绝对值即图~\ref{fig:interface}(b) 中虚线。式~\eqref{eq:delay-error} 说明：
+\textbf{接口延迟必须补偿，否则重载线路（$\theta$ 大、$\cot\theta$ 小）反而误差小，
+而轻载/长线（$\theta$ 小）误差巨大}；这是一个反直觉但可直接验证的结论。
+$50$ Hz 下 $\tau=5$ ms 对应 $\omega_s\tau=\pi/2$，即 $90^\circ$ 相移，足以使接口失稳。
+
+\paragraph{小问题：接口传什么变量？步长比 $N$ 取多大？为什么轻载时延迟误差反而大？}
+（i）\textbf{传什么}：EMT$\to$RMS 传三相瞬时 $v_{abc},i_{abc}$ 提取出的
+基频相量 $V\angle\theta,I\angle\theta$；RMS$\to$EMT 传相量合成的受控源 $v_{abc}(t)$
+（式~\eqref{eq:interface-vars}），接口功率按一个周期平均守恒（式~\eqref{eq:power-consistency}）。
+（ii）\textbf{$N$ 取多大}：$N=\Delta t_r/\Delta t_e$ 的上限由接口精度与稳定性决定，不是越大越好。
+例：若 EMT 侧最高关心谐波为 $1250$ Hz，则 $\Delta t_r<0.4$ ms（式~\eqref{eq:nyquist}），
+取 $\Delta t_e=50\,\mu$s 时 $N\le8$；若 EMT 侧含 $10$ kHz 开关级细节，则 $\Delta t_r<0.05$ ms，
+必须减小 $N$，或先在 EMT 侧滤波再送入接口。
+（iii）\textbf{为什么轻载更敏感}：延迟是相角误差，而 $P=(V_1V_2/X)\sin\theta$
+对相角的灵敏度是 $\cos\theta$；$\theta$ 小时 $\cot\theta$ 很大，
+相对误差 $\omega_s\tau\cot\theta$ 被放大（图~\ref{fig:interface}b）。
+
+\paragraph{采样定理。} 设 EMT 侧最高关心谐波为 $f_h$，则 RMS 侧采样步长必须满足
+\begin{equation}
+\Delta t_r<\frac{1}{2f_h}
+\qquad\bigl(f_h=1250\,\text{Hz}\Rightarrow \Delta t_r<0.4\,\text{ms}\bigr),
+\label{eq:nyquist}
+\end{equation}
+否则该谐波会混叠到基波频带，污染相量（图~\ref{fig:interface}a）。
+这与“RMS 步长可以取 $10$ ms”的直觉矛盾：步长上限不是由机电动态决定，而是由
+\textbf{接口精度}决定——这也是混合仿真中“RMS 侧也必须用较小步长”的原因。

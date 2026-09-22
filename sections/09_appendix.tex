@@ -1,0 +1,226 @@
+\appendix
+
+\section{从 KCL 到潮流方程（完整推导）}
+\label{app:powerflow}
+
+本附录给出正文式~\eqref{eq:power-flow} 的完整推导，供查阅；
+正文只引用结论（该推导属项目第 1 项“潮流/QSTS”任务的调研范围）。
+
+设网络有 $n$ 个节点，节点注入电流与节点电压的关系由基尔霍夫电流定律给出：
+\begin{equation}
+\bI=\bY\bV,\qquad \bY=\bG+\jj\bB ,
+\label{eq:app-kcl}
+\end{equation}
+其中节点导纳矩阵由支路导纳 $y_{km}=1/(R_{km}+\jj X_{km})$ 与对地支路组装：
+\begin{equation}
+Y_{ik}=
+\begin{cases}
+\displaystyle\sum_{m\in\mathcal{N}(i)}\!\!\Bigl(g_{im}+\jj b_{im}\Bigr)+y_{i0}, & i=k,\\[6pt]
+-\bigl(g_{ik}+\jj b_{ik}\bigr), & i\neq k,\ i\sim k,\\[2pt]
+0, & \text{否则}.
+\end{cases}
+\label{eq:app-ybus}
+\end{equation}
+节点 $i$ 的复功率为 $S_i=V_iI_i^{*}$；把式~\eqref{eq:app-kcl} 代入并取共轭：
+\begin{equation}
+S_i=V_i\sum_{k=1}^{n}Y_{ik}^{*}V_k^{*}.
+\label{eq:app-scomplex}
+\end{equation}
+写 $V_i=V_ie^{\jj\theta_i}$、$Y_{ik}=G_{ik}+\jj B_{ik}$、$\theta_{ik}=\theta_i-\theta_k$，
+分离实部与虚部即得式~\eqref{eq:power-flow}。按已知量分类：
+PQ 节点给定 $P_i,Q_i$，PV 节点给定 $P_i,V_i$，平衡节点给定 $V,\theta$；
+式~\eqref{eq:power-flow} 为 $2n$ 个代数方程，用牛顿--拉夫逊法求解，
+雅可比矩阵 $\partial(P,Q)/\partial(\theta,V)$ 具有式~\eqref{eq:app-ybus} 的稀疏结构，
+在解附近二阶收敛（典型 $3$--$5$ 次迭代）。
+
+\section{RL 支路 $dq$ 方程的完整推导}
+\label{app:rldq}
+
+正文推导块 2 给出的结论式~\eqref{eq:rl-dq} 推自 $abc$ 域方程。由
+\begin{equation}
+\bm{v}_{abc}=R\,\bm{i}_{abc}+L\,\frac{\dd\bm{i}_{abc}}{\dd t},
+\qquad \bm{i}_{abc}=\bT^{-1}(\theta)\bm{i}_{dq0},
+\end{equation}
+代入并注意 ${\dd\bT^{-1}}/{\dd t}=\bT^{-1}\dot\theta\,\bm{S}$（$\bm S$ 为 $90^\circ$ 旋转），得
+\begin{equation}
+\bm{v}_{dq0}=R\,\bm{i}_{dq0}+L\,\bT^{-1}\frac{\dd\bm{i}_{dq0}}{\dd t}
++L\,\bT^{-1}\dot\theta\,\bm{S}\,\bm{i}_{dq0}.
+\end{equation}
+左乘 $\bT$（即得到 $dq0$ 分量）并令 $\dot\theta=\omega$，即得
+\begin{equation}
+v_d=R\,i_d+L\,\dif{i_d}{t}-\omega L\,i_q,\qquad
+v_q=R\,i_q+L\,\dif{i_q}{t}+\omega L\,i_d .
+\end{equation}
+其中 $\omega L$ 项来自坐标旋转（非电磁暂态），$L\,\dd i/\dd t$ 项才是电磁暂态。
+
+\section{软件与 benchmark 清单}
+\label{app:tools}
+
+\begin{table}[H]
+\centering
+\caption{三类模型的常用软件与测试系统}
+\label{tab:tools}
+\small
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
+\toprule
+ & 常用软件 & 常用测试系统 / 数据 \\
+\midrule
+PF / QSTS & MATPOWER、pandapower、OpenDSS、PSS\textsuperscript{\textregistered}E、PowerFactory &
+IEEE 9/14/30/39/118；IEEE 13/34/123 馈线；CIGRE MV/LV \\
+RMS & PSS\textsuperscript{\textregistered}E、PowerFactory、Dynawo、ANDES &
+WSCC 3 机 9 节点；IEEE 双区域 4 机；Nordic 32 机 \\
+EMT & PSCAD/EMTDC、EMTP-RV、ATP、Simscape Electrical &
+IEEE 9 节点 EMT 算例；CIGRE B4 直流基准；WECC 第二基准 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+数据来源建议：网络参数取 MATPOWER 算例与 IEEE PES 测试馈线文档；
+光伏/风电出力取 NREL 公开数据集；负荷曲线取 IEEE 测试馈线负荷与 OpenEI；
+EV 充电取公开充电站数据集。注意时间分辨率须与模型匹配：
+QSTS 用 $1$--$15$ min，EMT 用 $\mu$s 级波形，二者不可混用。
+
+\section{缩略语表}
+\label{app:abbr}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}l l X@{}}
+\toprule
+缩写 & 英文全称 & 中文含义 \\
+\midrule
+EMT & Electromagnetic Transient & 电磁暂态（直接求解瞬时量的模型） \\
+RMS & Root-Mean-Square & 机电暂态/相量域动态仿真（本文取此义） \\
+PF & Power Flow & 潮流 \\
+QSTS & Quasi-Static Time-Series & 准稳态时序 \\
+DAE & Differential-Algebraic Equation & 微分--代数方程 \\
+DER & Distributed Energy Resource & 分布式能源（光伏、储能、电动汽车等） \\
+IBR & Inverter-Based Resource & 变流器型电源（经变流器接入的电源） \\
+VSC & Voltage Source Converter & 电压源型变流器 \\
+GFL / GFM & Grid-Following / Grid-Forming & 跟网型 / 构网型变流器控制 \\
+PLL & Phase-Locked Loop & 锁相环 \\
+PWM & Pulse Width Modulation & 脉宽调制 \\
+DFT & Discrete Fourier Transform & 离散傅里叶变换（本文用于相量提取） \\
+PSS & Power System Stabilizer & 电力系统稳定器（抑制低频振荡） \\
+CDA & Critical Damping Adjustment & 临界阻尼调整（EMT 数值方法） \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{主要符号表}
+\label{app:symbols}
+
+供读者忘记符号时查阅；正文中每个符号首次出现处均给出定义。
+下表按“通用 $\to$ 网络与潮流 $\to$ EMT 与数值方法 $\to$ 动态/降阶/接口 $\to$ Kuramoto”分组。
+
+\begin{longtable}{@{}l p{7.4cm} l@{}}
+\caption{主要符号表（按类别分组）}\label{tab:symbols}\\
+\toprule
+符号 & 含义 & 首次出现 \\
+\midrule
+\endfirsthead
+\toprule
+符号 & 含义 & 首次出现 \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+\multicolumn{3}{@{}l}{\textbf{（1）通用}}\\
+$n$ & 节点（或振子）数目 & \S\ref{sec:q2} \\
+$t$ & 时间 & 式~\eqref{eq:emt-dae} \\
+$\jj$ & 虚数单位 & 式~\eqref{eq:power-flow} \\
+$\Real\{\cdot\},\ \Imag\{\cdot\}$ & 取实部、取虚部 & 式~\eqref{eq:kuramoto-meanfield} \\
+$\omega_s$ & 同步角频率（$2\pi\times50$ rad/s） & \S\ref{sec:phasor-link} \\
+$T$ & 工频周期（$20$ ms） & 式~\eqref{eq:power-consistency} \\
+$\bm{x}$ & 状态变量（需初值、随时间演化） & 式~\eqref{eq:emt-dae} \\
+$\bm{y}$ & 代数变量（由约束即时确定） & 式~\eqref{eq:rms-dae} \\
+$\bm{z}$ & 快变量（电磁暂态量） & 式~\eqref{eq:singular} \\
+$\bm{u}$ & 输入/控制变量（$P_m$、励磁、变流器指令） & 式~\eqref{eq:emt-dae} \\
+$\bm{f},\ \bm{g}$ & 微分方程右端、代数约束函数 & 式~\eqref{eq:emt-dae} \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{（2）网络与潮流}}\\
+$V_i,\ \theta_i$ & 节点 $i$ 的电压幅值与相角 & 式~\eqref{eq:power-flow} \\
+$P_i,\ Q_i$ & 节点 $i$ 的注入有功、无功 & 式~\eqref{eq:power-flow} \\
+$S_i=P_i+\jj Q_i$ & 节点 $i$ 的复功率 & 式~\eqref{eq:power-flow} \\
+$\theta_{ik}$ & 相角差 $\theta_i-\theta_k$ & 式~\eqref{eq:power-flow} \\
+$G_{ik},\ B_{ik}$ & 节点导纳矩阵元素的实部、虚部 & 式~\eqref{eq:power-flow} \\
+$\bm{Y},\ \bm{G},\ \bm{B}$ & 节点导纳矩阵及其实部、虚部 & 式~\eqref{eq:app-kcl} \\
+$y_{km},\ g_{km},\ b_{km}$ & 支路导纳及其实部、虚部 & 式~\eqref{eq:app-ybus} \\
+$R_{ik},\ X_{ik}$ & 支路电阻、电抗 & 式~\eqref{eq:app-ybus} \\
+$H$ & 同步机惯性时间常数（$2$--$9$ s） & \S\ref{sec:q1} \\
+$\bm{T}(\theta)$ & Park 变换矩阵 & 式~\eqref{eq:park} \\
+$\bm{S}$ & $90^\circ$ 旋转矩阵 & 附录~\ref{app:rldq} \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{（3）EMT 与数值方法}}\\
+$L,\ C,\ R$ & 电感、电容、电阻 & 式~\eqref{eq:emt-elements} \\
+$i_L,\ v_C$ & 电感电流、电容电压 & 式~\eqref{eq:emt-elements} \\
+$Z_c,\ \tau$ & 行波波阻抗、行波穿越时间 & \S\ref{sec:q1} \\
+$\Delta t$ & 积分步长（下标 $e$ 为 EMT、$r$ 为 RMS） & 式~\eqref{eq:emt-dt} \\
+$f_{\max}$ & 最高关心频率（决定 EMT 步长） & 式~\eqref{eq:emt-dt} \\
+$N$ & 步长比 $\Delta t_r/\Delta t_e$ & \S\ref{sec:hybrid} \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{（4）动态、降阶与接口}}\\
+$\delta_i,\ \omega_i$ & 转子角、转速（偏差） & 式~\eqref{eq:swing} \\
+$E_q'$ & $q$ 轴暂态电势 & \S\ref{sec:q2} \\
+$M_i,\ D_i$ & 惯性常数、阻尼系数 & 式~\eqref{eq:swing} \\
+$P_{m,i},\ P_{e,i}$ & 机械功率、电磁功率 & 式~\eqref{eq:swing} \\
+$\varepsilon$ & 快慢时间常数之比（$10^{-4}$--$10^{-6}$） & 式~\eqref{eq:singular} \\
+$\bm{h}(\bm{x})$ & 慢流形映射（快变量由慢变量决定） & 式~\eqref{eq:slow-manifold} \\
+$\bm{f}_r$ & 降阶后的右端函数 & 式~\eqref{eq:slow-manifold} \\
+$\lambda_i,\ \kappa$ & 特征值、刚度比 & \S\ref{sec:eigen} \\
+$Z(\jmath\omega_s)=R+\jj\omega_sL$ & 支路阻抗 & 式~\eqref{eq:quasi-static} \\
+$\phi_z$ & 阻抗角 $\arctan(\omega_sL/R)$ & 式~\eqref{eq:qs-error} \\
+$m,\ \Omega$ & 包络调制深度、包络带宽 & 式~\eqref{eq:qs-error} \\
+$V(t),\ I(t)$ & 电压、电流的复包络 & 式~\eqref{eq:envelope-ode} \\
+$I_0,\ \delta I$ & 零阶（相量）解、一阶修正 & 式~\eqref{eq:quasi-static} \\
+$\tau_d$ & 接口延迟 & 式~\eqref{eq:delay-error} \\
+$Y_n,\ I_n$ & 诺顿等值导纳、电流源 & \S\ref{sec:hybrid} \\
+$E_{th},\ Z_{th}$ & 戴维南等值电压源、阻抗 & \S\ref{sec:hybrid} \\
+$f_h$ & EMT 侧最高关心谐波频率 & 式~\eqref{eq:nyquist} \\
+\midrule
+\multicolumn{3}{@{}l}{\textbf{（5）Kuramoto 模型}}\\
+$\theta_i$（振子） & 振子相位（对应电网相角 $\delta_i$） & 式~\eqref{eq:kuramoto} \\
+$\omega_i$（振子） & 自然频率（对应有功不平衡） & 式~\eqref{eq:kuramoto} \\
+$K,\ K_{ij}$ & 耦合强度（$K_{ij}=V_iV_jB_{ij}$） & 式~\eqref{eq:swing-kuramoto} \\
+$r$ & 序参量（$0$ 无序，$1$ 完全同步） & 式~\eqref{eq:order-param} \\
+$\psi$ & 序参量的平均相位 & 式~\eqref{eq:order-param} \\
+$g(\omega)$ & 自然频率分布 & 式~\eqref{eq:Kc} \\
+$\gamma$ & Lorentzian 分布的半宽 & \S\ref{sec:q4} \\
+$\delta(\cdot)$ & Dirac $\delta$ 函数 & 式~\eqref{eq:selfconsistent} \\
+\end{longtable}
+
+\section{关键设备与概念的简要说明}
+\label{app:concepts}
+
+面向不熟悉电力系统的读者；每条一到两句，按“设备 $\to$ 控制 $\to$ 建模用语”排列。
+
+\begin{table}[H]
+\centering
+\small
+\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+概念 & 简要说明 \\
+\midrule
+同步机 & 与电网同频率旋转的发电机（火电、水电、核电主力机型）；
+提供惯量，是传统电网动态的核心。 \\
+转子角 $\delta$、转速 $\omega$ & 转子相对同步旋转参考系的角位置与角速度；
+$\delta$ 超出稳定边界即“失步”。 \\
+惯性常数 $M$（或 $H$） & 转子转动惯量折算到电气量；$M$ 越大频率变化越慢。 \\
+阻尼系数 $D$ & 抑制转子振荡的等效阻尼（机械与电气部分之和）。 \\
+励磁系统 / AVR & 调节励磁电流以维持发电机端电压；时间常数约 $0.1$ 秒至数秒。 \\
+调速器 / 原动机 & 按频率偏差调整机械功率；时间常数数秒至数十秒。 \\
+PSS & 电力系统稳定器：附加励磁控制，抑制低频振荡。 \\
+变流器（VSC/逆变器） & 电力电子开关装置，把直流变换为交流；控制灵活但没有固有惯量。 \\
+IBR / DER & 经变流器接入的电源（光伏、风电、储能、电动汽车）；
+IBR（Inverter-Based Resource）强调“经变流器接入”。 \\
+GFL / GFM & 跟网型（跟随电网相位、需锁相环）／构网型（自建电压与频率、可支撑惯量）。 \\
+PLL & 锁相环：跟网型变流器用来测量电网相位的环节，其动态是 EMT 关注的快动态之一。 \\
+内环 / 外环控制 & 内环控电流（千赫兹级，快）、外环控功率或电压（较慢）；
+两者保留程度不同，正是 EMT 与 RMS 的差别之一。 \\
+载波 / 包络 & 载波指 $50$ Hz 工频正弦；包络指其幅值随时间的慢变轮廓。 \\
+准稳态 & 假设包络变化足够慢、从而忽略其导数的近似（判据见式~\eqref{eq:qs-error}）。 \\
+\bottomrule
+\end{tabularx}
+\end{table}

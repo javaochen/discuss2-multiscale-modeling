@@ -1,0 +1,105 @@
+\section{小结与对项目下一步的建议}
+\label{sec:summary}
+
+\subsection{假设与适用条件汇总}
+
+本报告的每个定量结论都依赖明确的假设。为便于核查与质疑，
+表~\ref{tab:assumptions} 汇总“结论--假设--失效条件”，避免把某条结论
+误用到其假设不成立的场景。
+
+\begin{table}[htbp]
+\centering
+\caption{主要结论所依赖的假设与失效条件}
+\label{tab:assumptions}
+\small
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
+\toprule
+结论 & 依赖的假设 & 失效条件 \\
+\midrule
+潮流方程（式~\eqref{eq:power-flow}） & 稳态、单一频率、输电网三相平衡 &
+频率显著偏离、三相不平衡（配电网需三相 PF） \\
+RMS 可代数化网络（式~\eqref{eq:rms-dae}） & 网络电磁暂态远快于机电动态 &
+变流器带宽接近网络谐振频率 \\
+准稳态误差（式~\eqref{eq:qs-error}） & 包络带宽 $\Omega\ll\omega_s$ &
+$\Omega/\omega_s$ 或调制深度 $m$ 大 \\
+奇异摄动降阶（式~\eqref{eq:slow-manifold}） & 快子系统一致渐近稳定、$\varepsilon\ll1$ &
+快子系统失稳，或 $\varepsilon$ 不够小 \\
+混合接口（式~\eqref{eq:delay-error}、\eqref{eq:nyquist}） &
+功率按周期平均守恒、延迟小、满足采样定理 & 高次谐波显著、延迟接近半周期 \\
+Kuramoto（式~\eqref{eq:swing-kuramoto}） &
+(A1) 无损、(A2) 恒幅值、(A3) 均匀惯性/过阻尼 & $R/X$ 不小、电压问题主导 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{五条核心结论}
+
+\begin{enumerate}[leftmargin=1.8em]
+\item \textbf{三类模型的差别是“保留哪些动力学”，不是“精度高低”。}
+同一电网的现象跨越约 15 个数量级（图~\ref{fig:timescales}），
+PF/QSTS、RMS、EMT 各覆盖一段，逐条保留/忽略清单见表~\ref{tab:retention}。
+\item \textbf{潮流与 RMS 的连接有两层含义}：
+工作点层（潮流 $=$ RMS 的平衡点，传 $V\angle\theta$ 与 $P,Q$，\S\ref{sec:workpoint}）
+与瞬时--相量层（EMT 与 RMS 交换三相瞬时值与基频相量，\S\ref{sec:phasor-link}）。
+\item \textbf{降阶是否安全有可计算的判据}：
+准稳态误差 $\varepsilon=m(\Omega/\omega_s)\sin\phi_z$（式~\eqref{eq:qs-error}），
+其数学本质是奇异摄动的慢流形极限（式~\eqref{eq:slow-manifold}），
+工程上表现为刚度比 $10^4$--$10^6$（图~\ref{fig:spectrum}）。
+\item \textbf{混合仿真的接口有两条硬约束}：
+Nyquist（$\Delta t_r<1/(2f_h)$）与延迟误差（$\approx\omega_s\tau\cot\theta$），
+二者共同决定了 RMS 侧在混合仿真中也必须用小步长（图~\ref{fig:interface}）。
+\item \textbf{Kuramoto 是 RMS 的降阶模型}，其成立依赖三个强假设
+（无损、恒幅值、均匀惯性/过阻尼）；在输电网同步问题中可用且有相变等解析结论，
+在配电网（$R/X$ 大、电压主导）不可替代潮流/RMS（图~\ref{fig:swing}--\ref{fig:chain}）。
+\end{enumerate}
+
+\subsection{与项目书技术点/难点的对应}
+
+\begin{itemize}[leftmargin=1.6em]
+\item \textbf{技术内容第一点}（分布式资源高维非线性接入行为建模）：
+本报告给出 DER 接入后“在哪个时间尺度建模、用什么模型”的选择依据（\S\ref{sec:q2}）。
+\item \textbf{技术内容第二点}（有限元/伽辽金改进潮流计算）：
+给出“潮流作为降阶目标”的误差判据（式~\eqref{eq:qs-error}、式~\eqref{eq:eps-grid}），
+为降阶加速设定可接受的误差上界。
+\item \textbf{技术难点第二点}（多源不确定性难刻画）：
+说明不确定性在不同尺度上的表现不同——快尺度是随机开关/纹波，
+慢尺度是出力时序，二者需用不同模型（QSTS 场景法 vs EMT 波形统计）。
+\item \textbf{专利 1（电网建模，以 DER 建模为重点）}：
+可直接引用“三模型保留矩阵（表~\ref{tab:retention}）+ 接口变量定义（图~\ref{fig:hybrid}）”
+作为权利要求中“模型选择/切换条件”的技术依据。
+\end{itemize}
+
+\subsection{对第二次讨论的准备建议}
+
+\begin{enumerate}[leftmargin=1.6em]
+\item \textbf{数据与 benchmark}：建议至少准备
+（i）一个输电网测试系统（IEEE 9/39）用于 RMS 与 Kuramoto 对照；
+（ii）一个配电网测试系统（IEEE 34/123 节点）用于三相不平衡 PF/QSTS；
+（iii）DER 时序数据（光伏/负荷/EV），用于 QSTS。
+本报告的图已用到 IEEE 9 节点拓扑（图~\ref{fig:grid}），可直接复用。
+\item \textbf{建模框架}：建议以“潮流为骨架 $+$ DER 时序模块 $+$ 不确定性场景生成”
+作为主线框架；RMS/EMT 作为校验模块，Kuramoto 作为指标模块。
+与式~\eqref{eq:chain} 的链条一一对应。
+\item \textbf{待确认的问题（需项目组讨论）}：
+（i）承载力指标的“动态”程度——是纯 QSTS 越限统计，还是要含机电暂态裕度？
+（ii）是否允许把 Kuramoto 的序参量 $r$ 作为承载力的一项输出指标？
+（iii）配电网三相不平衡是否必须显式建模（决定用 DistFlow 还是三相 PF）。
+\end{enumerate}
+
+\subsection{边界与开放问题}
+
+本报告的每条结论都带有明确的使用边界（表~\ref{tab:assumptions}）。
+这些边界主要不是“尚未完成的工作”，而是跨尺度降阶本身的性质：降阶必然伴随信息损失。
+由此可提出三个可继续深入的问题：
+
+\begin{enumerate}[leftmargin=1.6em]
+\item \textbf{数据驱动的慢流形}：能否不经解析推导，直接从 EMT 仿真数据中学出
+RMS 的慢流形表示？（对应“用机器学习做复杂系统降阶”的思路。）
+\item \textbf{误差判据的推广}：式~\eqref{eq:qs-error} 的误差界能否直接用作学习型
+代理模型（surrogate model）的验收标准——即“误差低于该界，才允许用代理模型替代动态仿真”？
+\item \textbf{配电网的降阶指标}：当 $R/X$ 不小、假设 (A1) 失效时，
+是否存在替代 Kuramoto、但仍可解析的降阶指标？
+\end{enumerate}
+
+其余技术性限制（例如图~\ref{fig:spectrum} 的特征值算例为 $10$ 阶简化系统、
+混合仿真的稳定性只给出两条约束）已在正文相应位置随结论说明，不在此重复。

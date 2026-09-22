@@ -1,0 +1,153 @@
+\section{Q1：EMT 是什么，以及它在项目中的定位}
+\label{sec:q1}
+
+\noindent\textbf{本章回答}：EMT 是什么、保留了哪些动态、为什么本项目不以它为主线。
+组织顺序是：先说明它为什么必要（快动态进来了），再给方程与保留清单，最后交代代价与定位。
+
+\subsection{物理动机：电力电子化把“快”带进了电网}
+
+“电力电子化”指电网中通过变流器接入的电源与负荷（光伏、风电、储能、电动汽车、直流输电）
+占比不断提高，其特征是\textbf{控制动作快、系统惯量低}。
+传统输电网的动态由同步机主导：惯性时间常数 $H=2\text{--}9$ s，
+机电振荡频率 $0.1\text{--}2$ Hz，一次调频时间常数数秒到数十秒。
+在这种系统里，电压电流在 50 Hz 附近是窄带信号，用“幅值$+$相角”的
+相量（phasor）描述就足够，网络可以用代数方程表示。
+
+分布式资源大规模接入后，电网里多了另一类元件：由 IGBT/SiC 构成的电压源型变流器（VSC）。
+它们的开关频率 $f_{sw}$ 通常在 $2\text{--}20$ kHz（SiC 可达上百 kHz），
+内环电流控制带宽约 $0.5\text{--}2$ kHz，PLL 带宽约 $50\text{--}500$ Hz。
+这些动态的时间常数在 $10^{-6}\text{--}10^{-2}$ s，已经接近甚至快于 50 Hz 载波周期
+$T_0=20$ ms。此时“相量”假设的前提（信号窄带、网络瞬间建立）不再成立，必须直接求解
+三相瞬时值，这就是电磁暂态（Electromagnetic Transient, EMT）模型。
+
+图~\ref{fig:timescales} 把这一事实量化：同一套电网的研究对象从
+$1\,\mu$s（开关、行波）一直延伸到 $10^{9}$ s（约 32 年，规划），
+跨度约 15 个数量级；三类模型各自覆盖其中一段，且相邻两段只在边界处重叠。
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.99\textwidth]{fig01_model_timescales.pdf}
+\caption{\textbf{这张图说明}：电网里的事快慢相差约十五个数量级，不可能用一个模型同时覆盖。
+\textbf{看图}：横轴为对数时间尺度；上半部分彩色横条是各物理现象所在的尺度区间，
+下半部分三条色带为三类模型的适用范围与典型步长；竖直虚线为 50 Hz 周期（20 ms）。
+\textbf{结论}：三类模型不是精度之争，而是研究对象不在同一时间尺度。}
+\label{fig:timescales}
+\end{figure}
+
+\subsection{EMT 的建模对象与方程}
+
+EMT 在 $abc$（或 $\alpha\beta0$）坐标下直接离散元件方程。
+最基础的三个元件是
+\begin{equation}
+\underbrace{v_R = R\,i_R}_{\text{电阻（代数）}},\qquad
+\underbrace{v_L = L\,\dif{i_L}{t}}_{\text{电感（微分）}},\qquad
+\underbrace{i_C = C\,\dif{v_C}{t}}_{\text{电容（微分）}} .
+\label{eq:emt-elements}
+\end{equation}
+\textbf{读法}：三个元件中只有电阻是代数关系，电感与电容各含一个时间导数——
+这正是 EMT 与稳态模型的根本区别：EMT 必须保留这两个导数。
+
+把每个元件写成式~\eqref{eq:emt-elements} 后，对每个电气节点列基尔霍夫电流定律（KCL），
+得到一组关于瞬时量的微分--代数方程
+\begin{equation}
+\begin{cases}
+\dot{\bx} = \bm{f}(\bx,\bm{y},\bu,t),\\[2pt]
+\bzero = \bm{g}(\bx,\bm{y},\bu,t),
+\end{cases}
+\qquad
+\bx\in\mathbb{R}^{n},\ \bm{y}\in\mathbb{R}^{p},\ \bu\in\mathbb{R}^{m}.
+\label{eq:emt-dae}
+\end{equation}
+其中 $\bx$ 为状态变量（需初值、随时间演化，如线路电感电流、节点电容电压），
+$\bm{y}$ 为代数变量（由约束即时确定，主要是各节点电压），
+$\bu$ 为\textbf{输入/控制变量}（例如机组的机械功率 $P_m$、励磁电压、变流器的功率指令），
+$t$ 为时间。与 RMS 的差别在于：EMT 的 $\bx$ 里\textbf{包含全部网络贮能元件}（因此 $n$ 很大），
+$\bm{f}$ 中的开关函数使方程分段连续，$\bm{g}$ 中的约束来自纯电阻连接与理想电源。
+\textbf{读法}：$\bm{f}$ 描述“怎么变化”，$\bm{g}$ 描述“每时刻必须满足的约束”；
+EMT 的状态维数 $n$ 很大，且步长小、步数多——三者共同造成其计算量远高于潮流/RMS。
+
+长线与电缆需用分布参数（行波）模型而非集中参数；
+\textbf{这也解释了为什么只有 EMT 能算雷电冲击与行波}——相量模型假设网络“瞬时建立”
+（把行波时间视为零），做不到这一点。
+
+\begin{table}[htbp]
+\centering
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+物理过程 & PF/QSTS & RMS & EMT \\
+\midrule
+网络 KCL/KVL（瞬时） & \cellcolor{yellow!40}$\approx$ & \cellcolor{yellow!40}$\approx$ & \cellcolor{green!25}$\surd$ \\
+网络 $L,C$ 电磁暂态 & \cellcolor{red!15}$\times$ & \cellcolor{red!15}$\times$ & \cellcolor{green!25}$\surd$ \\
+分布参数 / 行波传播 & \cellcolor{red!15}$\times$ & \cellcolor{red!15}$\times$ & \cellcolor{green!25}$\surd$ \\
+同步机定子磁链动态（快） & \cellcolor{red!15}$\times$ & \cellcolor{red!15}$\times$ & \cellcolor{green!25}$\surd$ \\
+转子摇摆动态（慢） & \cellcolor{red!15}$\times$ & \cellcolor{green!25}$\surd$ & \cellcolor{green!25}$\surd$ \\
+调速器 / 原动机动态 & \cellcolor{red!15}$\times$ & \cellcolor{yellow!40}$\approx$ & \cellcolor{green!25}$\surd$ \\
+励磁 / AVR 动态 & \cellcolor{red!15}$\times$ & \cellcolor{yellow!40}$\approx$ & \cellcolor{green!25}$\surd$ \\
+变流器 PWM 开关过程 & \cellcolor{red!15}$\times$ & \cellcolor{red!15}$\times$ & \cellcolor{green!25}$\surd$ \\
+逆变器内环电流控制 & \cellcolor{red!15}$\times$ & \cellcolor{yellow!40}$\approx$ & \cellcolor{green!25}$\surd$ \\
+PLL / 外环控制 & \cellcolor{red!15}$\times$ & \cellcolor{yellow!40}$\approx$ & \cellcolor{green!25}$\surd$ \\
+三相不平衡与负序/零序 & \cellcolor{yellow!40}$\approx$ & \cellcolor{yellow!40}$\approx$ & \cellcolor{green!25}$\surd$ \\
+非额定频率下的偏离 & \cellcolor{red!15}$\times$ & \cellcolor{yellow!40}$\approx$ & \cellcolor{green!25}$\surd$ \\
+全阶微分方程（未降阶） & \cellcolor{red!15}$\times$ & \cellcolor{yellow!40}$\approx$ & \cellcolor{green!25}$\surd$ \\
+\bottomrule
+\end{tabular}
+\caption{三类模型对物理过程的保留程度。$\surd$ 完整保留，
+$\approx$ 准稳态/平均/参数化，$\times$ 忽略或退化为代数约束。
+\textbf{图的目的}：把“三模型差异”从定性说法变成逐条可核对的清单；
+例如“变流器 PWM 开关过程”一行，只有 EMT 是 $\surd$，这正是
+式~\eqref{eq:emt-dae} 中开关函数的作用。}
+\label{tab:retention}
+\end{table}
+
+\subsection{EMT 的求解与步长（定性）}
+
+EMT 的方程用\textbf{隐式积分}逐步推进（工程上最常用梯形法\cite{dommel1969,watson2007}；
+国内电磁暂态仿真技术的系统综述见文献\cite{dong2018}）。
+它的计算结构与潮流/RMS 有本质区别：把电感、电容在每个时步等值为
+“电导 $+$ 历史电流源”（诺顿等值），因此\textbf{每个时步只需解一次线性方程组}，
+而不是像潮流那样解非线性方程并做牛顿迭代。这解释了“EMT 步数多但每步便宜、
+潮流步数少但每步贵”的差别。
+
+步长由\textbf{最高关心频率} $f_{\max}$ 决定（开关频率、网络谐振、$LC$ 振荡中最大者）：
+
+\begin{equation}
+\Delta t \;\lesssim\; \frac{1}{10\sim20\,f_{\max}} .
+\label{eq:emt-dt}
+\end{equation}
+\textbf{读法}：步长与最高关心频率成反比——想看得越快，步长就必须越小；这就是“分辨率”的直接体现。
+
+对 $10$ kHz 开关的变流器，$\Delta t\lesssim5\,\mu$s；工程上取 $1$--$50\,\mu$s
+（图~\ref{fig:timescales}）。一次秒级仿真因此需要 $10^{5}$--$10^{6}$ 步，
+这是 EMT 计算量远高于潮流/RMS 的直接原因（刚度比的定量讨论见 \S\ref{sec:eigen}）。
+其数值细节（梯形法推导、伴随电路、临界阻尼调整、开关插值）不在本报告展开。
+
+\subsection{EMT 在本项目中的定位}
+
+本项目要回答的是“城市电网还能接入多少分布式资源”，其评估与优化尺度为
+分钟--小时--年（图~\ref{fig:timescales} 下半的 PF/QSTS 段），
+对应的模型是潮流与准稳态时序模型。引入 EMT 不会改变承载力指标的定义，
+只会把计算量提高 $10^{3}\text{--}10^{6}$ 倍（见 \S\ref{sec:eigen} 的刚度比）。
+因此 EMT 在本项目中的定位是：
+\begin{enumerate}[leftmargin=1.6em]
+\item \textbf{判据提供者}：给出“哪些动态可以安全忽略”的边界（\S\ref{sec:quasi}、\S\ref{sec:singular}）；
+\item \textbf{局部验证器}：对高比例 IBR 的薄弱片区做详细校验，而不是全网主算；
+\item \textbf{解释素材}：解释为什么 RMS/相量模型在电力电子化下会失效。
+\end{enumerate}
+
+\paragraph{小问题 1：EMT 既然用不到，为什么还要调研？}
+除了上面三条，还有一个直接原因：本项目技术内容第二点要“改进潮流计算”，
+而改进的前提是知道\textbf{潮流到底忽略了什么、在什么条件下可以忽略}。
+式~\eqref{eq:qs-error} 与式~\eqref{eq:eps-grid} 就是这条判据的量化形式；
+没有 EMT 这一端，判据无从谈起。
+
+\paragraph{小问题 2：“暂态”和“稳态”怎么区分？}
+本报告统一用\textbf{时间尺度}而不是“时间长短”来定义：
+若某变量的时间常数 $\tau_x$ 与关注现象的时间尺度相当，它就是“动态的”（暂态问题）；
+若 $\tau_x$ 远小于关注尺度，则它在该尺度上“瞬时建立”，可用代数约束替代（稳态问题）。
+这样定义的好处是：同一个电感在 EMT 中是动态的、在潮流中是代数的，
+差别只来自关注尺度不同——这正是表~\ref{tab:retention} 中
+“网络 $L,C$ 电磁暂态”一行从 EMT 的 $\surd$ 变为 PF 的 $\times$ 的含义。
+
+这与讨论中的判断一致：EMT“仅需了解，后续大概率不会用到”，但多尺度建模“重要”。

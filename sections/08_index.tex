@@ -1,0 +1,37 @@
+\section{图表与脚本索引}
+\label{sec:index}
+
+表~\ref{tab:index} 汇总“问题--图--脚本--结论”：每张图由哪个脚本生成、回答哪个问题、一句话结论是什么。
+全部图由 \texttt{python/} 下脚本现场数值计算，参数写在脚本内，关键数值存于 \texttt{data/*.npz}；
+矢量版为 \texttt{figures/*.pdf}（供 LaTeX 引用），位图版为 \texttt{figures/*.png}。
+
+\begin{table}[htbp]
+\centering
+\caption{问题--图--脚本索引}
+\label{tab:index}
+\small
+\begin{tabularx}{\textwidth}{@{}lllX@{}}
+\toprule
+问题 & 图/表 & 脚本 & 该图要说明的一句话结论 \\
+\midrule
+Q1 & \ref{fig:timescales} & \texttt{fig01\_timescales.py} & 同一电网的现象跨越 15 个数量级，三类模型各覆盖一段 \\
+Q1 & 表~\ref{tab:retention} & \texttt{fig02\_assumptions.py} & 三模型对每个物理过程保留/近似/忽略的完整清单 \\
+Q3 & \ref{fig:park} & \texttt{fig03\_park.py} & 平衡正序时 dq 为直流；不平衡出现 $2\omega$ 纹波，相量法失效 \\
+Q3 & \ref{fig:phasor} & \texttt{fig04\_phasor.py} & 相量法丢掉的暂态严格按 $e^{-t/\tau}$ 衰减，最坏合闸时与稳态同量级 \\
+Q3 & \ref{fig:quasistatic} & \texttt{fig05\_quasistatic.py} & 准稳态误差 $\approx m(\Omega/\omega)\sin\phi_z$：判据是包络带宽 $\ll$ 载波频率 \\
+Q3 & \ref{fig:singular} & \texttt{fig06\_singular.py} & RMS 是 EMT 在 $\varepsilon\to0$ 的慢流形极限，快动态只存在于 $O(\varepsilon)$ 边界层 \\
+Q3 & \ref{fig:spectrum} & \texttt{fig07\_spectrum.py} & 线性化系统特征值分成两团，刚度比 $\sim10^4$，这是全阶仿真的根本困难 \\
+Q3 & \ref{fig:hybrid} & \texttt{fig08\_hybrid.py} & 混合仿真的接口交换“瞬时波形$\leftrightarrow$基频相量”，代价是延迟与插值误差 \\
+Q3 & \ref{fig:interface} & \texttt{fig09\_interface.py} & 接口误差的两条硬约束：Nyquist 混叠与 $\omega\tau\cot\theta$ 延迟误差 \\
+Q4 & \ref{fig:swing} & \texttt{fig10\_swing\_kuramoto.py} & swing 方程在无损纯感、恒幅值假设下即为 Kuramoto 模型 \\
+Q4 & \ref{fig:transition} & \texttt{fig11\_kuramoto\_transition.py} & 耦合增强时出现同步相变，临界耦合有解析解 \\
+Q4 & \ref{fig:grid} & \texttt{fig12\_kuramoto\_grid.py} & 真实网络拓扑上的 Kuramoto 同步过程与序参量演化 \\
+Q4 & \ref{fig:chain} & \texttt{fig13\_model\_chain.py} & 完整 DAE $\to$ RMS $\to$ Kuramoto 的近似链条与信息损失 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{小问题：这些图是“自己算的”还是“找来的”？}
+全部由 \texttt{python/} 下脚本现场数值计算生成，可重复运行；
+每张图的坐标轴含义、参数取值、解析对照都在正文首次引用处给出，
+关键数值另存 \texttt{data/*.npz}。如需复核某个数值，可直接打开对应脚本与数据文件。

@@ -1,0 +1,151 @@
+\section{Q2：PF/QSTS、RMS、EMT 三类模型的对照}
+\label{sec:q2}
+
+\noindent\textbf{本章范围}：只做\textbf{对照}——三类模型各自的假设、忽略的物理过程、
+时间尺度与状态变量，这是本部分任务明确要求的内容。
+潮流（含 AC/配电网/三相潮流、DistFlow、QSTS、DER 接入后的变化）与
+RMS 的建模细节分别是第 1、2 项任务的调研内容，本章只引用其结论，不重复推导。
+
+\subsection{三类模型的形式与变量}
+
+\paragraph{潮流 / QSTS（主线模型）。}
+假设：稳态、单一频率、输电网三相平衡。节点功率平衡方程为\cite{kundur1994,sauer1998}
+\begin{equation}
+P_i=V_i\sum_{k=1}^{n}V_k\bigl(G_{ik}\cos\theta_{ik}+B_{ik}\sin\theta_{ik}\bigr),\qquad
+Q_i=V_i\sum_{k=1}^{n}V_k\bigl(G_{ik}\sin\theta_{ik}-B_{ik}\cos\theta_{ik}\bigr),
+\label{eq:power-flow}
+\end{equation}
+待求量为各节点电压幅值与相角 $(V_i,\theta_i)$，\textbf{没有状态变量}。
+\textbf{读法}：这是一组\textbf{纯代数方程}——未知量只有各节点的电压幅值与相角；
+式中的 $G_{ik},B_{ik}$ 来自网络导纳，$\theta_{ik}=\theta_i-\theta_k$ 是相角差。
+式~\eqref{eq:power-flow} 的完整推导（KCL $\to$ 节点导纳 $\to$ 复功率 $\to$ 功率方程）
+见附录~\ref{app:powerflow}，属第 1 项任务的调研范围，正文只引用结论。
+式~\eqref{eq:power-flow} 中\textbf{没有任何时间导数}——这不是因为它“静态”，
+而是所有时间导数项都被假设为零：在 \S\ref{sec:singular} 会证明，
+令 RMS 的微分--代数方程所有导数 $=0$，得到的正是式~\eqref{eq:power-flow}。
+把负荷与 DER 的时序逐点代入求解，即\textbf{准稳态时序模型（QSTS）}，
+它是承载力评估最常用的计算内核\cite{dlt2041,ge2023}。
+
+\paragraph{RMS（机电暂态/相量域动态）。}
+假设有两条：
+（i）网络的时间常数（毫秒级）远小于所关心的机电动态（秒级），
+因此每一时刻网络都可以用代数方程表示，不必描述其暂态过程；
+（ii）三相近似对称，可用\textbf{正序相量}——把一组对称的三相量合成为一个等效单相量——来描述运行状态。
+其形式为微分--代数方程\cite{machowski2020,milano2010}
+\begin{equation}
+\dot{\bx}=\bm{f}(\bx,\bm{y},\bu),\qquad
+\bzero=\bm{g}(\bx,\bm{y},\bu),
+\label{eq:rms-dae}
+\end{equation}
+其中
+\begin{itemize}[leftmargin=1.6em]
+\item $\bx$：真正带时间导数的\textbf{状态}——转子角 $\delta$、转速 $\omega$、暂态电势
+$E_q'$，以及调速器/励磁/稳定器与变流器外环、PLL 等控制器状态；
+\item $\bm{y}$：瞬时建立、由代数约束确定的量——节点电压 $(V,\theta)$，
+即式~\eqref{eq:power-flow} 的复数形式。
+\end{itemize}
+\textbf{读法}：第一式描述“状态怎么随时间变化”（微分方程），
+第二式描述“每一时刻必须满足的网络约束”（代数方程）；
+两者必须联立求解，这也是“微分--代数方程（DAE）”这一名称的来源。
+DER 如何加入（GFL/GFM、聚合模型\cite{hang2021}）与数值求解方法，
+属第 2 项任务的调研内容，本章不展开。
+
+\paragraph{EMT（电磁暂态）。}
+见 \S\ref{sec:q1}：$abc/\alpha\beta0$ 瞬时域、保留网络贮能元件与开关动态，
+步长 $1\text{--}50\,\mu$s。
+
+\subsection{三者对照}
+
+表~\ref{tab:models} 汇总差异。有三点需要强调：
+\begin{enumerate}[leftmargin=1.6em]
+\item \textbf{“正序/三相”与“相量/瞬时”是两个正交的维度。}
+配电网潮流（DistFlow、三相不平衡 PF）可以是“三相 $+$ 稳态”（仍属 PF 族）；
+RMS 通常是“正序 $+$ 动态”；EMT 是“三相 $+$ 瞬时”。
+\item \textbf{时间尺度不是模型本身，而是模型的分辨率。}
+三类模型描述的是\textbf{同一个物理系统}，只是保留的动力学阶数不同；
+因此在 \S\ref{sec:q3} 可以把它们写成同一条降阶链条。
+\item \textbf{“忽略”不等于“不存在”。}
+RMS 忽略网络电磁暂态，等价于承认网络“瞬时建立”；
+当变流器带宽接近网络谐振频率时，这个假设失效（\S\ref{sec:quasi}）。
+\end{enumerate}
+
+\begin{table}[htbp]
+\centering
+\caption{PF/QSTS、RMS、EMT 三类模型对照}
+\label{tab:models}
+\small
+\begin{tabularx}{\textwidth}{@{}lXXX@{}}
+\toprule
+ & \textbf{PF / QSTS} & \textbf{RMS} & \textbf{EMT} \\
+\midrule
+数学形式 & 代数方程 & 微分--代数方程(DAE) & 微分--代数方程(DAE, 分段) \\
+状态变量 & 无（$V,\theta$ 为未知量） & $\delta,\omega,E_q'$、控制器状态；$V,\theta$ 为代数量 & $i_L,v_C$ 等瞬时量；开关状态 \\
+坐标 & 正序相量（配电网可三相） & 正序相量 / $dq$ & $abc$ 或 $\alpha\beta0$ 瞬时 \\
+频率 & 恒定 $50$ Hz & 允许偏离额定 & 瞬时（含谐波） \\
+网络 & 式~\eqref{eq:power-flow}（$Y$ 代数） & 代数化，$Y$ 代数 & $L,C$ 微分 + KCL \\
+典型步长 & 无步长（或 $1$ min--$1$ h） & $1$--$10$ ms & $1$--$50\,\mu$s \\
+研究问题 & 稳态越限、承载力、规划 & 机电振荡、频率/电压稳定 & 开关暂态、行波、谐振、快速控制 \\
+典型工具 & MATPOWER/PSS\textsuperscript{\textregistered}E/OpenDSS & PSS\textsuperscript{\textregistered}E/Dynawo/ANDES & PSCAD/EMTP/Simscape \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{EMT 与 RMS 的方程差异}
+
+两类模型都可以写成“微分 $+$ 代数”的形式，但差异在于\textbf{代数约束从哪来}：
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
+\toprule
+ & \textbf{EMT}（式~\eqref{eq:emt-dae}） & \textbf{RMS}（式~\eqref{eq:rms-dae}） \\
+\midrule
+状态 $\bx$ & 含网络贮能元件（$i_L,v_C$）与开关状态 & 仅机电与控制器（$\delta,\omega,E_q'$、PLL 等） \\
+代数约束 $\bm g=\bzero$ & 纯电阻连接与理想电源 & 网络功率平衡（式~\eqref{eq:power-flow}） \\
+坐标与频率 & $abc$ 瞬时量，含谐波与不对称 & 正序相量 / $dq$，允许频率偏离额定 \\
+典型步长 & $1$--$50\,\mu$s & $1$--$10$ ms \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+一句话：\textbf{EMT 把网络当作动态元件，RMS 把网络当作代数约束}。
+这就是两者方程形式最本质的差异，也是“RMS 是 EMT 降阶”的具体含义。
+
+\subsection{按任务清单的逐项对照}
+
+第一次讨论要求了解三类模型的“假设是什么、忽略了哪些物理过程、研究哪个时间尺度、有哪些变量”。
+表~\ref{tab:four-questions} 逐项给出对照。
+
+\begin{table}[htbp]
+\centering
+\caption{按任务清单的三模型对照}
+\label{tab:four-questions}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{@{}lXXX@{}}
+\toprule
+ & \textbf{PF / QSTS} & \textbf{RMS} & \textbf{EMT} \\
+\midrule
+假设 & 稳态、单一频率、三相平衡 & 网络“瞬时建立”、正序相量 & 无额外假设（直接求瞬时量） \\
+忽略的物理过程 & 全部时间导数 & 网络电磁暂态（$L\,\dd i/\dd t$、$C\,\dd v/\dd t$） & 几乎不忽略（仅忽略寄生效应等） \\
+时间尺度 & 分钟--小时--年 & $0.1$--$10$ s & $\mu$s--ms（步长 $1$--$50\,\mu$s） \\
+变量 & $V,\theta$（无状态） & 状态 $\delta,\omega,E_q'$ 等；代数 $V,\theta$ & 瞬时量 $i_L,v_C$、开关状态 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{小问题 1：三类模型是同一个系统吗？为什么能互相转换？}
+是同一个物理系统，三个模型只是\textbf{保留的动力学阶数}不同。
+把它们联系起来的数学工具是奇异摄动（\S\ref{sec:singular}）：
+快变量被代数约束替代得到 RMS，进一步令慢导数 $=0$ 得到潮流。
+“能转换”的前提是\textbf{快子系统稳定}（等价于 $\partial\bm{g}/\partial\bm{z}$ 可逆），
+否则降阶无效——这不是文字游戏，而是可检验的条件（图~\ref{fig:singular}）。
+
+\paragraph{小问题 2：这和项目书第二点“有限元/伽辽金改进潮流”有什么关系？}
+关系在“用什么标准判断降阶是否可接受”。
+伽辽金/基函数方法把一个连续或高维问题投影到低维子空间，必然引入投影误差；
+本报告给出的式~\eqref{eq:qs-error}（准稳态误差）与式~\eqref{eq:eps-grid}（刚度比）
+正是\textbf{投影误差的物理上界}。
+换言之：潮流能不能被加速、能加速到什么程度，取决于允许忽略哪些动态；
+这两条式子给出了可写进专利/论文的定量条件。

@@ -1,0 +1,296 @@
+\section{Q4：Kuramoto 模型与电网——为什么能用、代价是什么（重点）}
+\label{sec:q4}
+
+\noindent\textbf{本章回答}：Kuramoto 为什么能用于电网、假设是什么、与 RMS 是什么关系。
+逻辑是“先建模型、再证明它从哪来、最后划清边界”：先给标准形式与变量含义，
+再从 swing 方程逐步推出它，最后给出可解析结论与适用边界。
+
+\subsection{模型形式与变量含义}
+
+Kuramoto 模型描述 $N$ 个弱耦合、近全同的相位振子\cite{kuramoto1984}：
+\begin{equation}
+\dot\theta_i=\omega_i+\frac{K}{N}\sum_{j=1}^{N}\sin(\theta_j-\theta_i),
+\qquad i=1,\dots,N,
+\label{eq:kuramoto}
+\end{equation}
+\textbf{读法}：每个振子按自身的自然频率 $\omega_i$ 转动，同时被耦合项“拉”向与其他振子一致的相位；
+$K$ 越大，拉得越紧。
+其中三个量的物理含义是
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+符号 & 含义 \\
+\midrule
+$\theta_i$ & 第 $i$ 个振子的相位（在电网中对应节点电压相角或机组转子角） \\
+$\omega_i$ & 自然频率（无耦合时该振子自由振荡的频率；电网中对应节点有功不平衡） \\
+$K$ & 耦合强度（电网中对应线路电纳/电抗，$K_{ij}=V_iV_jB_{ij}$） \\
+\bottomrule
+\end{tabular}
+\end{center}
+描述宏观同步程度用\textbf{序参量}
+\begin{equation}
+r e^{\jj\psi}=\frac{1}{N}\sum_{j=1}^{N}e^{\jj\theta_j},\qquad r\in[0,1],
+\label{eq:order-param}
+\end{equation}
+\textbf{读法}：$r=0$ 表示完全无序，$r=1$ 表示完全同步，$\psi$ 为平均相位——
+用一个标量概括整个网络的同步程度。
+由于式~\eqref{eq:kuramoto} 的耦合项可写成
+$\frac{K}{N}\sum_j\sin(\theta_j-\theta_i)
+=K\,\Imag\bigl[e^{-\jj\theta_i}\frac{1}{N}\sum_j e^{\jj\theta_j}\bigr]
+=K r\sin(\psi-\theta_i)$，
+全连接 Kuramoto 可用\textbf{平均场}精确积分（每步只需 $O(N)$）：
+\begin{equation}
+\dot\theta_i=\omega_i+K\,r(t)\sin\bigl(\psi(t)-\theta_i\bigr).
+\label{eq:kuramoto-meanfield}
+\end{equation}
+\textbf{读法}：耦合被压缩成“与平均场的相互作用”，每步只需 $O(N)$——
+这正是 Kuramoto 可解析、可做大规模数值实验的原因。
+这正是本报告 \texttt{fig11} 数值实验的计算方式。
+
+\subsection{为什么能用于电网：从 swing 方程到 Kuramoto（假设 A1--A3）}
+\begin{derivblock}{推导块 5：从 swing 方程到 Kuramoto}
+\textbf{起点}：swing 方程 $+$ 网络功率；\textbf{目标}：三假设下的退化（3 步）；\textbf{结论}：Kuramoto 是 swing 的严格退化；\textbf{支撑}：Q4“为什么能用”。
+
+
+
+\paragraph{第一步：转子运动方程。}
+同步机的二阶经典模型为\cite{anderson2003,kundur1994}
+\begin{equation}
+\dot\delta_i=\omega_i-\omega_s,\qquad
+M_i\,\dot\omega_i=P_{m,i}-P_{e,i}-D_i(\omega_i-\omega_s),
+\label{eq:swing}
+\end{equation}
+$M_i$ 为惯性常数，$D_i$ 为阻尼，$P_{m,i}$ 为机械功率，$P_{e,i}$ 为电磁功率。
+\textbf{读法}：第一式给出相角与转速的关系；第二式是转子运动方程——
+不平衡功率（$P_m-P_e$）驱动转速变化，阻尼 $D$ 抑制振荡。
+
+\paragraph{第二步：电磁功率的网络表达。} 由式~\eqref{eq:power-flow}，
+节点 $i$ 的有功注入为
+\begin{equation}
+P_{e,i}=V_i^2G_{ii}+\sum_{j\neq i}V_iV_j\bigl(G_{ij}\cos\delta_{ij}+B_{ij}\sin\delta_{ij}\bigr),
+\qquad \delta_{ij}=\delta_i-\delta_j .
+\label{eq:Pe-general}
+\end{equation}
+\textbf{读法}：电磁功率由网络导纳与所有相角差共同决定——
+网络约束就是在这里进入动力学方程的。
+
+\paragraph{第三步：三个假设。} 在\textbf{（A1）无损}（$G_{ij}=0$）、
+\textbf{（A2）电压幅值恒定}（$V_i\equiv V$）、
+\textbf{（A3）均匀惯性/阻尼}（$M_i\equiv M$，$D_i\equiv D$）的条件下
+（这一化简在文献\cite{filatrella2008,dorfler2012}中被严格讨论），
+式~\eqref{eq:Pe-general} 退化为
+\begin{equation}
+P_{e,i}=\sum_{j\neq i}K_{ij}\sin\delta_{ij},\qquad K_{ij}=V_iV_jB_{ij}=\frac{V_iV_j}{X_{ij}} .
+\label{eq:Pe-lossless}
+\end{equation}
+\textbf{读法}：在 A1、A2 下只剩 $\sin$ 项；耦合强度 $K_{ij}=V_iV_j/X_{ij}$
+完全由电压幅值与线路电抗决定，与运行点无关。
+把式~\eqref{eq:Pe-lossless} 代入式~\eqref{eq:swing}：
+\begin{equation}
+\boxed{\;
+M_i\ddot\delta_i=P_{m,i}-\sum_{j\neq i}K_{ij}\sin(\delta_i-\delta_j)-D_i\dot\delta_i\;}
+\label{eq:swing-kuramoto}
+\end{equation}
+式~\eqref{eq:swing-kuramoto} 保留惯性，称为\textbf{二阶 Kuramoto}（含惯性的 swing 型）。
+若进一步取\textbf{过阻尼极限} $M_i\to0$，则惯性项消失，化为一阶标准 Kuramoto 式~\eqref{eq:kuramoto}。
+因此：
+\begin{quote}
+\textbf{Kuramoto 模型不是“类比”，而是同步机摇摆方程在（A1）无损、（A2）恒幅值、
+（A3）均匀惯性/过阻尼三个假设下的严格退化形式。}
+其变量对应为：$\theta_i\leftrightarrow\delta_i$，
+$\omega_i\leftrightarrow P_{m,i}/M_i$（或 $P_{m,i}/D_i$），
+$K_{ij}\leftrightarrow V_iV_j/X_{ij}$。
+\end{quote}
+
+\end{derivblock}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.99\textwidth]{fig10_swing_vs_kuramoto.pdf}
+\caption{\textbf{这张图说明}：Kuramoto 与真实的电网模型差多少、在什么条件下完全一样。
+\textbf{画的是什么}：(a) $R=0$ 时三台机组的转子角 $\delta_i(t)$（彩色实线为完整 swing 模型，黑色虚线为 Kuramoto 模型，两者重合）；
+(b) $R/X=0.5$ 时两者分离（实线为完整模型、虚线为 Kuramoto）；
+(c) 稳态相对角偏差（各时刻先减去整体均值再取最大）与 $R/X$ 的双对数关系及斜率 1 参考线。
+$R,X$ 为线路电阻与电抗；假设 A1（无损）、A2（恒幅值）见 \S\ref{sec:q4}。
+\textbf{怎么读}：(a) 两解完全重合，说明在假设 A1--A2 下 Kuramoto 是严格退化；
+(b)(c) 电阻使两解分离，且相对角偏差与 $R/X$ 成正比。
+\textbf{直观理解}：Kuramoto 只保留了“纯电抗”的耦合，电阻带来的那一部分被丢掉；
+电阻相对电抗越大（$R/X$ 越大），丢掉的越多。
+\textbf{结论}：Kuramoto 丢掉的是电导 $G$ 项；输电线路 $R/X\sim0.05$--$0.2$ 可接受，配电网 $R/X\sim1$--$5$ 不适用。}
+\label{fig:swing}
+\end{figure}
+
+图~\ref{fig:swing} 的数值实验还揭示一个细节：
+$R\neq0$ 时系统的整体相角会出现\textbf{中性漂移}（所有 $\delta_i$ 同时平移），
+因为式~\eqref{eq:swing-kuramoto} 对整体旋转不变，所有 $\delta_i+c$ 都是平衡点。
+因此评价 Kuramoto 的“形状误差”时必须先减去整体均值，
+否则会把中性模式误记为模型误差。这一处理已写在脚本 \texttt{fig10\_swing\_kuramoto.py}
+的 \texttt{rel\_dev()} 中。
+
+\paragraph{小问题：凭什么说 Kuramoto 能用在电网上？假设有多强？}
+不是类比，而是严格退化：摇摆方程式~\eqref{eq:swing}
+$+$ 无损（A1）$+$ 恒幅值（A2）$+$ 均匀惯性/过阻尼（A3）
+即得式~\eqref{eq:swing-kuramoto}；图~\ref{fig:swing}(a) 给出数值验证（两者轨迹完全重合）。
+假设强度可直接量化：放开 A1 后偏差 $\propto R/X$（图~\ref{fig:swing}c），
+输电线路 $R/X\sim0.05$--$0.2$ 时偏差在百分之几，配电网 $R/X\sim1$--$5$ 时失效。
+
+
+\subsection{可解析结论：同步相变与临界耦合}
+\begin{derivblock}{推导块 6：自洽方程与临界耦合}
+\textbf{起点}：序参量 $+$ 平均场；\textbf{目标}：临界耦合（4 步）；\textbf{结论}：$K_c=2/(\pi g(0))$；\textbf{支撑}：承载力宏观指标。
+
+
+
+式~\eqref{eq:kuramoto} 最重要的性质是\textbf{同步相变}\cite{dorfler2013,rohden2012}：
+当耦合强度低于临界值 $K_c$ 时
+$r\to0$（无序），超过后 $r$ 连续增大。对自然频率分布 $g(\omega)$，
+经典结果（Strogatz\cite{strogatz2000,acebron2005}）为
+\begin{equation}
+K_c=\frac{2}{\pi\,g(0)} .
+\label{eq:Kc}
+\end{equation}
+\textbf{读法}：临界耦合只取决于\textbf{自然频率分布在零点处的密度} $g(0)$——
+分布越集中（$g(0)$ 越大），\textbf{门槛 $K_c$ 越低}。
+\textbf{方向不要记反}：门槛低意味着“在同样的 $K$ 下已经同步”，
+而不是“$K$ 越小越容易同步”。固定 $g(\omega)$ 时，$r$ 随 $K$ 单调增
+（$K\le K_c$ 时 $r=0$；$K>K_c$ 后 $r$ 由零连续上升），
+对 Lorentzian 分布有闭式 $r=\sqrt{1-K_c/K}$，可作单调性的直接验证。
+其推导是：在同步态下，能被锁定的振子满足 $|\omega|\le Kr$ 且相位满足
+$\sin\theta=\omega/(Kr)$，故其条件密度为
+$\rho(\theta|\omega)=\delta\bigl(\theta-\arcsin\frac{\omega}{Kr}\bigr)$；
+漂移振子对序参量的实部贡献为零。代入序参量定义式~\eqref{eq:order-param} 的实部，
+得\textbf{自洽方程}
+\begin{equation}
+r=\int_{-Kr}^{Kr}\sqrt{1-\Bigl(\frac{\omega}{Kr}\Bigr)^2}\,g(\omega)\,\dd\omega .
+\label{eq:selfconsistent}
+\end{equation}
+\textbf{读法}：这是一个\textbf{自洽}方程——右端通过积分上限与分母依赖 $r$，只能迭代求解；
+它把“宏观同步程度 $r$”与“微观频率分布 $g(\omega)$”联系了起来。
+为求临界耦合，令 $r\to0^+$。做变量替换 $\omega=Kru$，式~\eqref{eq:selfconsistent} 化为
+$r=Kr\int_{-1}^{1}\sqrt{1-u^2}\,g(Kru)\,\dd u$；
+当 $r\to0$ 时 $g(Kru)\to g(0)$，并利用 $\int_{-1}^{1}\sqrt{1-u^2}\,\dd u=\pi/2$，
+两边约去 $r$ 得 $1=K g(0)\pi/2$，即式~\eqref{eq:Kc}。对 Lorentzian 分布 $g(\omega)=\frac{\gamma}{\pi(\omega^2+\gamma^2)}$，
+$K_c=2\gamma$。
+
+\end{derivblock}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.99\textwidth]{fig11_kuramoto_transition.pdf}
+\caption{\textbf{这张图说明}：耦合要强到什么程度，整个网络才会同步。
+\textbf{画的是什么}：(a) 稳态序参量 $r$（$r=0$ 为无序、$r=1$ 为完全同步）与耦合强度 $K$ 的关系（带点线），
+红色竖虚线为理论值 $K_c=2\gamma$（$\gamma$ 为自然频率分布 $g(\omega)$ 的 Lorentzian 半宽，本例 $\gamma=1$，故 $K_c=2$）。
+(b) 两种耦合强度下 $r$ 随时间的演化 $r(t)$。
+(c) 各振子的平均频率 $\langle\dot\theta_i\rangle$ 与自然频率 $\omega_i$ 的关系，黑虚线为未耦合情形 $\dot\theta=\omega$。
+振子数 $N=400$。
+\textbf{怎么读}：(a) $r$ 在 $K_c$ 处由零转为正，即同步相变；(c) $K>K_c$ 时中部一段振子的频率被锁定（水平段），边缘振子仍漂移。
+\textbf{直观理解}：耦合太弱时，每个振子按自己的频率转，谁也带不动谁；
+耦合超过一个门槛后，中间的振子被“拉住”、频率趋于一致——这个门槛就是 $K_c$。
+门槛高低取决于“大家频率差得有多大”（分布越宽越难同步）。
+\textbf{结论}：临界耦合有解析式 $K_c=2/(\pi g(0))$，可作为宏观同步性指标。}
+\label{fig:transition}
+\end{figure}
+
+电网映射：$K_c$ 越大表示需要越强的网架/越大的耦合才能维持同步；
+这为“承载力”提供了一个\textbf{宏观同步性指标}（序参量 $r$）的建模思路。
+但必须注意图~\ref{fig:grid} 的结论：拓扑稀疏时同步阈值显著提高，
+全连接的式~\eqref{eq:Kc} 不能直接搬到电网。
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.99\textwidth]{fig12_kuramoto_grid.pdf}
+\caption{\textbf{这张图说明}：在真实网络拓扑上，同步是更容易还是更难。
+\textbf{画的是什么}：(a) IEEE 9 节点拓扑，节点颜色按 $\sin\theta_i$ 着色（$\theta_i$ 为节点相角），此例取弱耦合 $K=0.5$。
+(b) 三种耦合强度下序参量 $r(t)$ 的演化。
+(c) $K=8$ 时各节点相角（减去各自初值）随时间的演化。
+\textbf{怎么读}：(a) 颜色分散表示相位分散；(b) 耦合越强 $r$ 越大、越早趋稳；(c) 强耦合时所有曲线合成一根斜线，即相角被锁定。
+\textbf{为什么}：耦合项沿网络的边累加，稀疏网络中每个节点只与少数邻居相连，
+有效耦合更弱，因此必须用更大的 $K$ 才能达到同样的同步程度；
+这也是全连接公式 $K_c=2/(\pi g(0))$ 不能直接外推的原因。
+\textbf{直观理解}：耦合是沿着边“传递”的——邻居越少，每个振子受到的拉力越弱，
+所以要更大的 $K$ 才能把它们拉成同步。
+\textbf{结论}：拓扑稀疏时同步更难，全连接的 $K_c$ 公式不能直接搬到真实网络。}
+\label{fig:grid}
+\end{figure}
+
+\paragraph{小问题：$K_c=2\gamma$ 对电网意味着什么？}
+$\gamma$ 是节点有功不平衡（自然频率）分布的离散程度，$K_c$ 是维持同步所需的
+最小耦合强度。映射到电网：
+$K_c$ 越大，说明需要越强的网架（$B_{ij}=1/X_{ij}$ 越大）或越小的不平衡才能同步。
+于是“接入更多 DER”在 Kuramoto 语言里等价于“$\gamma$ 增大而 $K_c$ 不变”，
+结果是同步裕度下降。
+
+
+\subsection{与 RMS 的关系：降阶，而非等价}
+
+综合 \S\ref{sec:singular} 与本节推导，四类模型之间是一个\textbf{简化关系}——注意其中
+PF 与 Kuramoto 是两条并列的分支，而不是前后两级：
+
+\begin{equation}
+\begin{array}{rcl}
+\text{EMT} & \xrightarrow[\text{平均开关}]{\text{忽略网络电磁暂态}} & \text{RMS}\\[5pt]
+\text{RMS} & \xrightarrow[\text{令所有导数}=0]{\ \ \text{静态化}\ \ } & \text{PF / QSTS}\\[5pt]
+\text{RMS} & \xrightarrow[\text{恒幅值、无损纯感}]{\text{相角化（消去网络）}} & \text{Kuramoto}
+\end{array}
+\label{eq:chain}
+\end{equation}
+\textbf{读法}：前两行是一条链（EMT $\to$ RMS）；后两行是 RMS 的\textbf{两个并列简化}——
+PF 丢掉时间维度（静态化），Kuramoto 保留时间但消去网络与电压（相角化）。
+因此 Kuramoto \textbf{不是}“潮流的进一步简化”：它比 PF 保留了转子摇摆动态，
+只是把状态从“电压 $+$ 相角”压缩到“仅相角”。
+表~\ref{tab:kuramoto-rms} 给出 Kuramoto 与 RMS 的逐项对照。
+
+\begin{table}[htbp]
+\centering
+\caption{Kuramoto 与 RMS 的关系}
+\label{tab:kuramoto-rms}
+\small
+\begin{tabularx}{\textwidth}{@{}lXX@{}}
+\toprule
+ & \textbf{RMS} & \textbf{Kuramoto} \\
+\midrule
+状态变量 & $\delta,\omega,E_q',E_d'$, 控制器状态 & 仅 $\delta_i$（一阶）或 $\delta_i,\omega_i$（二阶） \\
+电压幅值 & 变量（$V_i$ 动态由网络/励磁决定） & 常数 $V_i\equiv V$（假设 A2） \\
+网络 & 代数约束式~\eqref{eq:power-flow}，含 $G_{ij},B_{ij}$ & 直接消去为 $\sin$ 耦合，仅 $B_{ij}$（假设 A1） \\
+无功/损耗 & 保留 & 全部丢弃 \\
+可解析性 & 一般需数值积分 & 有相变等解析结论（式~\eqref{eq:Kc}） \\
+适用场景 & 通用（输电/配电、弱网） & $X/R\gg1$、强电压支撑、宏观同步问题 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{结论。}
+Kuramoto 是 RMS 在三个强假设下的\textbf{降阶模型}，不是等价模型：
+\begin{enumerate}[leftmargin=1.6em]
+\item 在高压输电网（$X/R\sim5\text{--}20$、电压支撑强）的\textbf{同步稳定性}问题上，
+它保留了主要机制，可作为解析工具（相变、临界耦合）；
+\item 在配电网（$R/X\sim1\text{--}5$）和以电压问题为主导的场景中，
+假设 A1--A2 均不成立（图~\ref{fig:swing}c 已量化 $R/X$ 的影响），
+Kuramoto 只能做定性/宏观指标，不能替代潮流或 RMS；
+\item 对本项目，Kuramoto 的价值在于为“城市电网承载力的宏观同步性判据”
+提供一个\textbf{可解析、可解释}的骨架，但必须同时报告其假设边界。
+此外，变流器下垂控制（droop control）与 Kuramoto 已有严格对应\cite{simpsonporco2013}，
+可作为 DER 占比进一步提高后的扩展方向。
+\end{enumerate}
+
+\paragraph{小问题：Kuramoto 与 RMS 是等价、近似还是降阶？配电网能用吗？}
+是\textbf{降阶}（reduction）而非等价：丢掉了电压幅值动态、无功与网络损耗，
+逐项对照见表~\ref{tab:kuramoto-rms}。
+配电网（$R/X\sim1$--$5$）中假设 A1 直接失效，且配电网的核心问题通常是
+电压越限与三相不平衡而非功角同步，因此 Kuramoto 只能用作定性/宏观指标，
+不能替代潮流或 RMS；这一点由图~\ref{fig:swing}(c) 的 $R/X$ 扫描直接量化。
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.99\textwidth]{fig13_model_chain.pdf}
+\caption{\textbf{这张图说明}：这几类模型到底是什么关系（是本报告的总览图）。
+\textbf{看图}：四列方框依次为完整 EMT、RMS、潮流/功率平衡、Kuramoto；
+框间箭头标注各次降阶丢掉的动态，下方灰框标注代价或损失。
+\textbf{为什么}：PF 是“令所有导数为零”（丢掉时间维度）；Kuramoto 是“保留时间、但用恒幅值 $+$ 无损
+把网络代数约束解析消去”（丢掉电压与网络）。两者丢掉的量不同，因此是并列而非前后两级。
+\textbf{直观理解}：PF 是把“时间”整个丢掉（只看稳态）；Kuramoto 是保留时间、但把“电压与网络”丢掉。
+两者丢掉的不是同一样东西，所以是并列的两条路，而不是前后两级。
+\textbf{结论}：EMT、RMS、PF 是一条链，而 Kuramoto 是 RMS 的\textbf{并列简化}（不是链上下一级）；
+Q3 回答前两级的连接，Q4 回答 Kuramoto 从哪来、代价是什么。}
+\label{fig:chain}
+\end{figure}

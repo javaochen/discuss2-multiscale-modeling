@@ -1,0 +1,459 @@
+面向分布式资源大规模接入的城市电网
+面向分布式资源     大规模接入的城市电网承载力评估
+                          承载力评估及及优化
+                                 优化技术研究
+                                   技术研究
+技术内容（来自项目书）
+  1. 基于时空动力学的
+  1.  基于时空动力学的分布式资源 分布式资源高维非线性接入行为
+                         高维非线性接入行为建模建模技术
+                                      技术
+      针对分布式资源接入行为在时间维度和空间维度上的强随机、大波动、多间歇，采用 Kuramoto
+                                                  Kuramoto 模型等时空动力学方法，建立能够精
+      准
+     描述高维非线性接入行为的动态演化模型。
+  2. 基于有限元偏微分方程的
+  2.  基于有限元偏微分方程的电力系统分析优化
+                       电力系统分析优化技术
+                                技术
+      针对分布式资源大规模接入下电网拓扑复杂化、潮流双向化，应用伽辽金方法、基函数选择等方法，设计有限元偏微分方程改进潮流
+     计算等电力系统分析基础算子的计算复杂度，从算法层面满足““主配微协同””趋势下复杂电力系统分析计算的快速收敛要求。
+  3. ““机理--智能””融合驱动的电网承载力动态评估及优化
+  3.           融合驱动的电网承载力动态评估及优化技术  技术
+      设计面向分布式资源大规模接入的城市电网承载力评估指标体系，基于分布式资源接入行为动态演化和改进型电力系统分析基础算
+     子，结合 Takens
+             Takens 嵌入理论、哈密顿动力学、格兰杰因果推断等方法，对电网承载力的机理进行分析；进一步建立跨电网层级、跨时空
+     尺度的承载力动态评估与优化智能模型。两者融合，完成电网承载力的网格化计算和推演承载力变化。
+  4. 电网承载力评估与优化原型系统开发及功能验证。
+  4.
+      研发基于智能复杂体系基础理论的电网承载力评估与优化原型系统，选取松江、奉贤或崇明片区，开展系统功能验证。
+技术难点（来自项目书）
+  1. 复杂网络巨系统下电网建模与计算复杂度过高问题
+  1.
+      在分布式资源大规模接入背景下，电力系统节点规模和拓扑复杂性显著提升，潮流计算、动态仿真和多目标优化面临计算规模指数级
+     增长的问题，传统分析方法难以满足实时性和精细化评估需求，亟需构建面向复杂网络巨系统的高效建模与计算方法。
+  2. 多源外部不确定因素对电网运行影响难以准确刻画的问题
+  2.
+      新能源出力、负荷需求、市场与环境因素具有显著随机性和非线性耦合特征，且多种不确定因素相互叠加，传统确定性模型难以全面
+     反映其对电网运行状态和承载能力的影响，亟需建立系统化的不确定性建模与分析方法，提升电网运行评估的鲁棒性。
+  3. 分布式新能源引发的电压与功率高频波动调控难题
+  3.
+      光伏、风电等新能源的随机性和间歇性导致配电网电压波动频繁、功率反送明显，给电压稳定、频率控制和动态功率平衡带来挑战，
+     现有调控手段在高比例接入场景下适应性不足，亟需研究智能化、动态化的电压与功率协同调控机制。
+  4. 多源异构电力数据采集与治理能力不足问题
+  4.
+      电力系统数据来源广泛、类型多样且规模巨大，受限于采集设备、传输条件和数据质量控制水平，数据缺失、噪声和异构性问题突
+     出，制约了精确建模与智能分析能力的发挥，亟需构建高效可靠的数据采集、治理与质量控制体系。
+
+分布式资源（DERDER，Distributed        Resources），指分布在用户端的小型能源系统，包括：
+                         Energy Resources
+             Distributed Energy
+  •• 分布式发电：分布式光伏、分散式风电
+   •• 分布式储能：电池储能系统、电动汽车
+特点：强随机、大波动、多间歇
+接入行为，指这些分布式资源并入电网
+
+一、电网如何建模？
+由于电网本身太过复杂，建模必然要进行简化，需要简化很多空间细节、时间尺度和物理过程。而研究电网里的不同问题，往往有不同的简化
+方法。
+因此，现实中，学界和业界会给同一套电网建立多套模型
+一般按照时间尺度给电网模型分类
+ 建模层次    时间尺度    主流方法                                                   研究的问题
+ 考虑宏观时序， 年––几十年 长期规划模型（Long-Term                       Model）：
+                                            Planning Model
+                                 Long-Term Planning                     未来应该建设多少风电、光伏、储能、火电、
+ 通常不模拟具体         包括容量扩展模型（Capacity              Expansion Model,
+                                     Capacity Expansion      Model,     输电线路等
+ 电气物理过程          CEM）
+                 CEM   、输电扩展规划模型（Transmission                 Expansion
+                                              Transmission Expansion
+                             TEP）
+                 Planning, TEP
+                 Planning,
+         天––月––年 生产模拟与可靠性模型（Production                Cost and
+                                          Production Cost    and        用一年或多年运行场景研究发电量、弃风弃
+                 Reliability Model）：
+                 Reliability Model                                      光、燃料成本、输电拥塞以及缺电风险、资源
+                 包括生产成本模型（Production              Cost Model,
+                                     Production Cost           PCM）、 充裕性等问题
+                                                       Model, PCM
+                 概率可靠性模型（Probabilistic           Reliability Model,
+                                   Probabilistic Reliability Model,
+                 PRM）
+                 PRM
+         分钟––天   电力系统运行优化模型（Power                 System Operational
+                                          Power System      Operational 决定机组什么时候启停、各发多少功率、储能
+                 Optimization  Model）：
+                 Optimization Model                                     如何充放电以及发生单一设备故障后系统是否
+                 包括机组组合模型（Unit            Commitment, UC
+                                     Unit Commitment,     UC）、经济调 仍安全；是电力市场、调度和运行优化的核心
+                 度模型（Economic                  ED）
+                                    Dispatch, ED
+                           Economic Dispatch,                           模型族
+假定系统处于平 稳态运行点             潮流模型（Power         Flow Model,
+                                       Power Flow  Model, PF PF），包括交流潮流模 描述某一运行时刻整个电网的电压、相角、有
+衡状态，模型为                   型、直流潮流模型、三相不平衡潮流模型、支路潮流模 功、无功和线路功率分布；输电网通常采用平
+代数方程                      型、配电潮流模型、最优潮流模型（Optimal                          Power
+                                                                  Optimal Power   衡网络模型，配电网通常采用三相不平衡模
+                          Flow, OPF）
+                          Flow, OPF                                               型；也是规划、优化、故障分析和动态仿真的
+                                                                                  基础网络模型
+                秒––分钟––年， 准静态时序模型（Quasi-Static               Time-Series
+                                             Quasi-Static Time-Series             QSTS 主要用于配电网，把负荷、光伏、储
+                                                                                  QSTS
+                但每一步仍视 Simulation,     QSTS）
+                          Simulation, QSTS                                        能、电动汽车、调压器等随时间变化的数据逐
+                为稳态                                                               时带入电网模型；研究电压越限、设备过载、
+                                                                                  光伏承载能力和配电设备动作次数
+                故障后的准稳 短路故障模型（Short-CircuitShort-Circuit // Fault
+                                                            Fault Analysis Model）
+                                                                  Analysis Model  计算三相短路、单相接地、两相短路等故障电
+                态                                                                 流和故障电压；主要用于保护整定、断路器容
+                                                                                  量、设备选型和故障水平分析
+                在运行点附近 小信号状态空间模型（Small-Signal                     State-Space
+                                                  Small-Signal State-Space        研究逆变器——电网以及逆变器——逆变器之间的
+                线性化，      Model）
+                          Model  ；阻抗模型 // 阻抗稳定性模型（Impedance-         Impedance-   控制耦合、PLL
+                                                                                         PLL 振荡、弱电网稳定性
+                约 ms–s
+                  ms–s    Based  Model）
+                          Based Model
+
+使用微分--代数 约 0.1–   0.1–几十秒 机电暂态 // 相量动态模型（Electromechanical
+                                                      Electromechanical           研究故障、线路跳闸、机组跳闸等扰动之后几
+方程                        Transient // Phasor-Domain
+                          Transient    Phasor-Domain Dynamic
+                                                       Dynamic Model,      RMS）
+                                                                   Model, RMS     秒到几十秒内的转子角、频率、电压和新能源
+（Differential-
+  Differential-                                                                   控制响应；是输电系统暂态稳定、频率稳定和
+Algebraic
+Algebraic                                                                         电压恢复研究的主力模型
+Equations,
+Equations,
+DAE）
+DAE             毫秒––秒     混合电磁暂态——相量仿真模型（Hybrid                      EMT–RMS
+                                                              Hybrid EMT–RMS      局部新能源场站、柔性直流或弱电网区域使用
+                          Simulation）
+                          Simulation                                              详细电磁暂态模型，外围大电网使用相量动态
+                                                                                  模型；用于兼顾大系统规模和局部电力电子动
+                                                                                  态精度
+                微秒––毫秒 电磁暂态模型（Electromagnetic
+                                           Electromagnetic Transient     Model,
+                                                               Transient Model,   直接模拟三相瞬时电压、电流以及电力电子控
+                          EMT）
+                          EMT                                                     制和开关过程；用于高压直流输电、逆变器、
+                                                                                  构网型变流器、弱电网、快速控制相互作用和
+                                                                                  复杂故障等快速动态问题
+如果按照空间尺度：
+ 空间尺度                                  研究对象                              常用方法
+ 设备级                                   单台 PV inverter、BESS
+                                          PV inverter BESS、EV   charger、
+                                                             EV charger  EMT、Small-Signal
+                                                                         EMT                     Impedance、Detailed
+                                                                                 Small-Signal // Impedance           RMS
+                                                                                                            Detailed RMS
+Device Level
+Device Level                           GFM/GFL 变流器
+                                       GFM/GFL
+局部网络级                                  数台到数十台 DER  DER、局部母线、微电网、 EMT     EMT、Small-Signal
+                                                                                 Small-Signal、RMS RMS；稳态时也可用 PF     PF
+Local Network Level
+Local Network Level                    小型工业园区
+馈线//配电网级                               一条或多条 feeder
+                                                feeder、配电变电站下游、几               DistFlow、QSTS
+                                                                         PF // DistFlow
+                                                                         PF              QSTS；动态问题用 RMS      RMS；局部高
+Feeder // Distribution-System
+Feeder    Distribution-System Level
+                              Level    百到几万节点及大量 PV/EV/BESS
+                                                        PV/EV/BESS       精度问题可用 EMT     EMT
+
+区域//聚合级                                一个变电站、城市或区域中的大量 DER         DER   Aggregate
+                                                                         Aggregate PFPF、QSTS/
+                                                                                          QSTS/时序聚合、RMS    RMS +   DER_A、
+                                                                                                                + DER_A
+Regional // Aggregated
+Regional    Aggregated Level
+                       Level           聚合                                Hybrid  EMT–RMS
+                                                                         Hybrid EMT–RMS
+
+大电网//系统级                               输电网、省级//州级电网、整个互联系统 AC/DC         AC/DC PF PF、RMS   Dynamic、DER_A
+                                                                                       RMS Dynamic     DER_A、Hybrid
+                                                                                                                Hybrid
+Bulk Power
+Bulk Power System
+           System // Interconnection
+                     Interconnection                                     EMT–RMS；一般不逐台使用详细 EMT
+                                                                         EMT–RMS                           EMT
+Level
+Level
+
+
+
+并入 DER
+   DER 后，电网的建模方法也是类似的，但是有专门的方法研究 DER             DER 并网电网的建模
+
+ 建模层次      时间尺度    主流方法                                             研究的问题
+ 考虑宏观时     年––几十年 长期规划模型（Long-Term                    Model）：容量扩展 研究未来应该建设多少集中式与分布式光
+                                             Planning Model
+                                   Long-Term Planning
+ 序，通常不模            模型（CEM CEM）   、输电//配电扩展规划模型（TEP/DEP    TEP/DEP）； 伏、储能、充电设施和输配电设备；预测
+ 拟具体电气物            DER 部署//采纳模型（DER
+                   DER                       Adoption）
+                                        DER Adoption                DER 的渗透率、容量、空间分布及其对长期
+                                                                    DER
+ 理过程                                                                电网投资的影响
+           天––月––年 生产模拟与可靠性模型（Production              Cost and
+                                           Production Cost and      用一年或多年运行场景研究高比例 DER
+                                                                                     DER 对净
+                   Reliability Model）：PCM
+                   Reliability Model  PCM、概率可靠性模型（PRM         PRM）  负荷曲线、峰值、弃风弃光、储能利用、输
+                                                                    电拥塞、备用需求以及资源充裕性的影响
+ 假定每个时刻         稳态运行点      潮流模型（Power        Flow Model,
+                                      Power Flow   Model, PFPF）：交流潮流、三相 描述 DER          DER 接入后各节点电压、相角、有功//
+ 处于平衡状                     不平衡潮流、多相//四线制潮流、配电潮流；支路潮流模 无功、线路潮流和损耗；重点研究配电网过
+ 态，以代数方                    型（Branch-Flow      DistFlow）及其线性化形式
+                               Branch-Flow // DistFlow                              电压、反向潮流、三相不平衡、线路及变压
+ 程描述电网                     LinDistFlow；输电系统级研究也可使用正序 AC/DC
+                           LinDistFlow                                    AC/DC 潮   器过载等。DistFlow/Branch-Flow
+                                                                                             DistFlow/Branch-Flow 尤其常用
+                           流和聚合 DER  DER 潮流模型                                       于辐射型配电网
+                 秒––分钟––年， 准静态时序模型（Quasi-Static                           QSTS）； 把负荷、分布式光伏、储能、EV
+                                                            Time-Series, QSTS
+                                            Quasi-Static Time-Series,                                         EV、调压器、
+                 但每一步仍视 Hosting    Capacity Analysis
+                           Hosting Capacity Analysis // Hosting
+                                                        Hosting Capacity   Model 通 智能逆变器等随时间变化的数据逐步代入电
+                                                                 Capacity Model
+                 为稳态       常建立在三相潮流或 QSTS       QSTS 之上                             网；研究长期电压越限、设备过载、调压设
+                                                                                    备动作、反向潮流以及可接纳多少 DER           DER
+                                                                                    （Hosting Capacity）
+                                                                                     Hosting Capacity
+
+                 故障后的准稳 短路故障模型（Short-Circuit
+                                          Short-Circuit // Fault
+                                                           Fault Analysis  Model）
+                                                                 Analysis Model   ： 研究三相短路、单相接地等情况下的故障电
+                 态         对称分量模型、三相故障模型，以及适用于 IBR/DER                   IBR/DER    流和电压；DER DER 场景尤其关注逆变器限流、
+                           的受控电流源型故障模型                                              负序响应、保护灵敏度、方向保护、重合闸
+                                                                                    和孤岛问题
+                 在运行点附近 小信号状态空间模型（Small-Signal                   State-Space
+                                                 Small-Signal State-Space           研究逆变器——电网以及逆变器——逆变器之间
+                 线性化，      Model）
+                           Model  ；阻抗模型 // 阻抗稳定性模型（Impedance-      Impedance-       的控制耦合、PLL  PLL 振荡、弱电网稳定性；是
+                 约 ms–s
+                   ms–s    Based  Model）
+                           Based Model                                              高比例电力电子 DER   DER 场景中重要的一类方法
+
+ 使用微分--代数 约 0.01–  0.01–几十 相量域动态 // RMS RMS 模型（Phasor-Domain           Dynamic //
+                                                     Phasor-Domain Dynamic          研究故障、线路跳闸等扰动后 DER         DER 的故障穿
+ 方程              秒              Model）
+                           RMS Model
+                           RMS          ；DER
+                                         DER 可采用单设备动态模型，也常采用 越、无功//有功控制、频率响应、电压恢复以
+ （Differential-
+   Differential-           聚合 DER
+                                DER 动态模型（Aggregate
+                                                 Aggregate DER     Model），典型如 及大规模 DER
+                                                              DER Model                     DER 集体脱网；在输电系统研究
+ Algebraic
+ Algebraic                 DER_A
+                           DER_A                                                    中，DER_A
+                                                                                       DER_A 等模型用于把大量分散 DER        DER 聚
+ Equations,
+ Equations,                                                                         合为少量等值动态模型
+ DAE）
+ DAE
+                 μs–几十秒
+                 μs–       混合 EMT–RMS
+                                EMT–RMS 仿真（Hybrid          EMT–RMS
+                                                  Hybrid EMT–RMS                    对 DER
+                                                                                      DER 聚集区、微电网、弱电网或新能源场
+                           Simulation）
+                           Simulation  ；也可与详细配电网//聚合 DER           DER 模型联合         站采用详细 EMT EMT，对外围大电网采用
+                                                                                    RMS；用于兼顾大系统规模和局部逆变器动
+                                                                                    RMS
+                                                                                    态精度
+                 μs–ms–s
+                 μs–ms–s   电磁暂态模型（Electromagnetic
+                                          Electromagnetic Transient     Model,
+                                                              Transient Model,      研究 DER
+                                                                                        DER 逆变器内部控制、限流、PLL         PLL、
+                           EMT）
+                           EMT   ：详细逆变器模型、平均值变流器模型、开关级 GFL/GFM                      GFL/GFM、DC-link
+                                                                                              DC-link、PWM
+                                                                                                       PWM、故障瞬态、孤
+                           模型等                                                      岛切换、弱电网以及多变流器快速控制相互
+                                                                                    作用
+本质上，DERDER 并入后，电网的基本物理定律没有变，因此建模方法是一样的
+下面是发生的变化
+ DER 并入后电网发生的变化
+ DER                  传统电网的典型假设          DER 后需要怎样修改建模
+                                         DER
+ 功率注入随时间波动变大          负荷随时间变化，但发电主要由大型机组 给 PV
+                                            PV、风电、EV  EV、柔性负荷建立时序模型；由单点 PF               PF
+                      集中控制，一般随时间变化很慢     扩展到 QSTS
+                                               QSTS // 时序潮流；使用一般的时序模型//数据驱动
+                                         的模型建模时序
+ 功率注入具有更强不确定性         发电出力相对可调，负荷预测误差是主要 将 DER
+                                            DER 的时序从确定值扩展为随机变量//随机过程，采用
+                      不确定性之一             场景、Monte   Carlo、概率模型等
+                                              Monte Carlo
+
+ 用户侧从纯负荷变成可发电节点 配电网功率基本是变电站 →→ 用户的单向 PF  PF 本身不需要改变基本方程，但节点净注入要允许正负
+                      潮流                 变化，从而自然产生反向潮流
+ 大量 DER
+     DER 分散接在配电网各处    发电集中在少数输电节点，配电网主要是 需要更高空间分辨率，显式表示 DER          DER 的位置、容量、接
+                      被动负荷网络             入相别；系统级研究则需要 DER        DER aggregation
+                                                                      aggregation // DER_A
+                                                                                     DER_A
+                                         等聚合模型
+ 三相不平衡更加明显            输电网通常假设三相平衡、使用正序模型 配电 DER
+                                             DER 常是单相接入，因此需要三相不平衡 PF                 PF、四线
+                                         制//多相模型、DistFlow/Branch-Flow
+                                                    DistFlow/Branch-Flow 等
+
+ 可观测性下降、设备行为更分散 大型机组的参数、状态通常由系统运营方 很多户用 DER      DER 的实时状态和参数不可直接获得，因此需
+                      掌握                 要聚合、状态估计以及数据驱动方法
+相当于：电网本身的建模稍微修改一下++多一个模块专门建模 DERDER 的时序
+
+Remark.
+Remark.
+建模部分，完全对应项目书技术内容的第一点：基于时空动力学的
+建模部分，完全对应项目书技术内容  的第一点：基于时空动力学的分布式资源
+                                   分布式资源高维非线性接入行为
+                                        高维非线性接入行为建模
+                                                 建模技术。
+                                                   技术。
+建议使用的模型：潮流模型及以潮流为基础的 QTST
+                       QTST、RMS
+                            RMS、EMT
+                                EMT，其中最建议用潮流模型，因为这个模型相对简单，而且和项目书里的第
+二点一脉相承。
+建模 DER
+   DER 时序的部分，对应项目书技术难点
+       时序的部分，对应项目书技术难点的第二点：多源外部不确定因素对电网运行影响难以准确刻画的问题。
+                      的第二点：多源外部不确定因素对电网运行影响难以准确刻画的问题。
+二、电网建模好了，如何求解与优化？
+电网的求解：
+一般我们建模电网，都是用代数方程（潮流）或微分代数方程（RMS/EMT
+                            RMS/EMT），但是建模好了还需要求解方程，学界和业界已有成熟的方法。
+但是，分布式资源大规模接入下，电网拓扑复杂化、潮流双向化，因此需要改进传统的方法，设计更好的求解方法。比如设计有限元偏微分方
+程，用伽辽金方法、基函数选择等方法，改进潮流计算等电力系统分析基础算子的计算复杂度。
+这部分对应项目书技术内容
+这部分对应项目书技术内容的第二点：基于有限元偏微分方程的
+            的第二点：基于有限元偏微分方程的电力系统分析优化
+                            电力系统分析优化技术，以及项目书
+                                       技术，以及项目书技术难点
+                                               技术难点的第一点：复杂网络巨系统下电
+                                                   的第一点：复杂网络巨系统下电
+网建模与计算复杂度过高问题。
+电网的优化与调控：
+调控和优化本质上还是在原有模型的基础上，控制部分变量（静态变量//时序变量），以达成某些目标或优化某些目标变量，也已有成熟方法，
+但是分布式资源大规模接入下，可能问题会更难优化，所以需要对原有方法进行改进。
+这部分对应项目书技术难点
+这部分对应项目书技术难点的第三点：分布式新能源引发的电压与功率高频波动调控难题。
+            的第三点：分布式新能源引发的电压与功率高频波动调控难题。
+
+三、如何评估电网承载力
+设计面向分布式资源大规模接入的城市电网承载力评估指标体系，基于电网建模，结合 Takens
+                                       Takens 嵌入理论、哈密顿动力学、格兰杰因果推断等
+方法，对电网承载力进行分析，进一步建立跨电网层级、跨时空尺度的承载力动态评估指标体系。
+设计好评估指标后，进一步指导电网进行优化。
+这部分对应项目书技术内容
+这部分对应项目书技术内容的第三点。
+            的第三点。
+
+硬性指标（按半年计）：
+现在 ~~ 2026.12.31
+       2026.12.31           发明专利 33 项，代码库
+                                    项，代码库 11 套
+2027.1.1 ~
+2027.1.1 ~   2027.6.30
+             2027.6.30      报批稿 11 项，发明专利 11 项，代码库 11 套
+2027.7.1 ~
+2027.7.1 ~   2027.11.30
+             2027.11.30     发明专利 22 项，录用论文 11 篇，软件著作权 11 项
+
+本学期时间线（Week2~Week14     Week2~Week14） ：
+第一次讨论：介绍项目内容（1week                1week）
+布置任务
+   •• 调研已有的电网建模方法（潮流计算、RMS                    RMS、EMT
+                                                   EMT）
+    •• 调研已有的兼容 DER           DER 接入的电网建模方法
+     •• 已有的这些方法如何数值求解
+分工：
+      •• 就 3        3 类基础模型，潮流/RMS/EMT
+                                  /RMS/EMT，分别详细调研
+
+第二次讨论：讨论已有的建模方法，并确定建模框架（1week                        1week）
+布置任务
+       •• 确定需要哪些数据（电网/DER           /DER）++ 收集数据 +  benchmark 等
+                                                  + benchmark
+
+第三次讨论：验收数据，具体设计电网建模方法（2weeks                     2weeks，正好是国庆节）
+布置任务
+        •• 基础的电网建模，写代码
+         •• DER   DER 部分的简单建模，写代码
+
+第四次讨论：汇总电网建模部分成果（1week                   1week，十月中旬）
+布置任务（从这开始要每个人负责不同板块，共33个方向）
+          •• 尝试 DER   DER 的时空动态//不确定性建模
+           •• 调研已有潮流计算方法
+            •• 调研已有电网承载力评估方法
+
+第五次讨论：继续分别推进33个板块
+             •• 尝试 DERDER 的时空动态//不确定性建模
+              •• 尝试改进潮流计算方法
+               •• 设计电网承载力评估指标体系
+
+十一月中旬前确认专利的框架和具体内容，并开始写专利，十一月底前出初稿
+专利11：电网建模部分（以 DER              DER 建模为重点）
+专利22：改进潮流计算方法（以潮流快速计算为重点）
+专利33：设计电网承载力评估指标体系（可以活用实验室的已有成果）
+
+第一次讨论的具体内容：介绍项目内容++分工
+33 类基础模型，潮流/RMS/EMT
+                  /RMS/EMT
+    •• 模型是如何建模的，假设是什么，忽略了哪些物理过程，研究哪个时间尺度
+     •• 数学模型（方程）是什么，解释变量含义
+      •• 光伏//风电//储能/EV
+                    /EV 怎么加入，接入以后模型怎么变化
+       •• 方程如何数值求解，讲最重要的方法，其他只需要列举方法的名称和特点
+        •• 有哪些成熟软件和 benchmark
+                       benchmark
+1. 潮流 // QSTS
+1.       QSTS 等准稳态模型（最重要的主线模型）
+最重要的模型，其基本形式比较简单，有很多种扩展，需要详细调研该模型，以及下面提到的这几个扩展：
+AC 潮流模型、配电网潮流模型、三相 PF
+AC                           PF、DistFlow
+                                DistFlow、QSTS
+                                          QSTS、DER
+                                                 DER 的接入后的模型变化。
+
+2. RMS 动态建模（动态扩展，用作辅助）
+2. RMS
+模型较为复杂，调研的关键词：微分代数方程、DER            DER 怎样加入（DER  DER inverter dynamics）、GFL/GFM
+                                                      inverter dynamics  GFL/GFM、aggregate model、数值求解方法，
+                                                                                 aggregate model
+不需要特别详细，讲清楚最基本的模型的建模方法和方程形式即可。
+3. EMT（仅需了解，后续大概率不会用到）与多尺度建模（重要）
+3. EMT
+         EMT 模型最复杂。简单科普一下 EMT
+    •• EMT                    EMT 即可。
+     •• 需要调研电网的多尺度建模：先了解潮流/RMS/EMT  /RMS/EMT这 3 3 类模型的假设是什么，忽略了哪些物理过程，研究哪个时间尺度，有哪些变
+         量，然后调研潮流和 RMS RMS 模型之间怎么连接，之间传什么变量等。
+         Kuramoto 模型为什么可以用来研究电网，用 Kuramoto
+      •• Kuramoto                       Kuramoto 模型研究电网，假设是什么，并解释变量含义，Kuramoto         Kuramoto 模型与 RMS
+                                                                                                    RMS 模型有
+         什么关系。
+
+注意，调研结果需要写一个note
+            note来记录，方便后面汇总整理材料，格式不限（md
+                                    md、tex
+                                       tex、word
+                                           word等）
+
+完成项目的指标是一部分，希望能在项目之外找到一些好的科学问题，了解可能的研究方向
+

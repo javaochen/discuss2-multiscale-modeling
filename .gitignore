@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# LaTeX 中间产物（保留 build/main.pdf）
+build/*.aux
+build/*.log
+build/*.blg
+build/*.bbl
+build/*.out
+build/*.toc
+build/*.synctex.gz
+build/*.fls
+build/*.fdb_latexmk
+
+# Kilo / 编辑器状态
+.kilo/
+.DS_Store
